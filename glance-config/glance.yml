@@ -397,6 +397,7 @@ pages:
                 {{ end }}
               {{ end }}
               </ul>
+
           - type: custom-api
             title: Spotify
             cache: 1s
@@ -540,6 +541,9 @@ pages:
                 icon: sh:discord
               beeper-facebook:
                 icon: sh:facebook-messenger
+              lil-homie-glances-ical-api-1:
+                name: gcal-api
+                icon: sh:google-calendar
               speedtest-tracker:
                 icon: sh:speedtest-tracker
               glance:
