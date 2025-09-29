@@ -1,0 +1,62 @@
+# Each service is a separate bridge container, named according to the bridge service it runs
+services:
+  discord:
+    extends:
+      file: ./common-services.yml
+      service: beeper-bridge
+    container_name: beeper-discord
+    volumes:
+      - ${DATA_PATH}/beeper-discord:/data
+    environment:
+      BRIDGE_NAME: sh-discord
+
+  signal:
+    extends:
+      file: ./common-services.yml
+      service: beeper-bridge
+    container_name: beeper-signal
+    volumes:
+      - ${DATA_PATH}/beeper-signal:/data
+    environment:
+      BRIDGE_NAME: sh-signal
+
+  facebook:
+    extends:
+      file: ./common-services.yml
+      service: beeper-bridge
+    container_name: beeper-facebook
+    volumes:
+      - ${DATA_PATH}/beeper-facebook:/data
+    environment:
+      BRIDGE_NAME: sh-meta
+
+  glance:
+    container_name: glance
+    image: glanceapp/glance
+    restart: unless-stopped
+    env_file: ./.env
+    volumes:
+      - ./glance-config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8080:8080
+
+  speedtest-tracker:
+    image: lscr.io/linuxserver/speedtest-tracker:latest
+    restart: unless-stopped
+    container_name: speedtest-tracker
+    ports:
+      - 8081:80
+      - 8443:443
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - APP_KEY=${SPEEDTEST_TRACKER_APP_KEY}
+      - DB_CONNECTION=sqlite
+    volumes:
+      - ${DATA_PATH}/speedtest-tracker:/config
+
+  glances-ical-api:
+    image: ghcr.io/awildleon/glance-ical-events:latest
+    restart: always
+    env_file: ./.env
