@@ -1,16 +1,21 @@
 server:
   assets-path: /app/config/assets
 theme:
-  default-light: catppuccin-latte
-  default-dark: catppuccin-macchiato
+  light: false
+  background-color: 232 23 18
+  contrast-multiplier: 1.2
+  primary-color: 220 83 75
+  positive-color: 105 48 72
+  negative-color: 351 74 73
   presets:
-    catppuccin-macchiato:
+    default-dark:
+      light: false
       background-color: 232 23 18
       contrast-multiplier: 1.2
       primary-color: 220 83 75
       positive-color: 105 48 72
       negative-color: 351 74 73
-    catppuccin-latte:
+    default-light:
       light: true
       background-color: 220 23 95
       contrast-multiplier: 1.0
@@ -24,285 +29,19 @@ pages:
     columns:
       - size: small
         widgets:
-          - type: group
-            widgets:
-              - type: weather
-                location: ${WEATHER_LOCATION}
-                units: imperial # alternatively "imperial"
-                hour-format: 24h # alternatively "24h"
-              - type: custom-api
-                title: Forecast
-                body-type: string
-                cache: 1h
-                options:
-                  location: ${WEATHER_LOCATION}
-                  temp_unit: fahrenheit
-                template: |
-                  {{/* THESE VALUES CAN BE CHANGED BY ADDING AN ENTRY TO THE OPTIONS SECTION */}}
-                    {{ $temp_unit := .Options.StringOr "temp_unit" "celsius" }}
-                    {{ $weekend_color := .Options.StringOr "weekend_color" "var(--color-separator)" }}
-                    {{ $overlay_color := .Options.StringOr "overlay_color" "hsl(var(--bghs), var(--bgl), 50%)" }}
-                    {{/* the following variables define the coloring of the sunny/cloudy/etc. weather icons*/}}
-                      {{ $color_clear := .Options.StringOr "color_clear" "var(--color-text-highlight)" }}
-                      {{ $color_partly := .Options.StringOr "color_partly" "var(--color-text-highlight)"}}
-                      {{ $color_cloud := .Options.StringOr "color_cloud" "var(--color-text-highlight)"}}
-                      {{ $color_smog := .Options.StringOr "color_smog" "var(--color-text-highlight)"}}
-                      {{ $color_drizzle := .Options.StringOr "color_drizzle" "var(--color-text-highlight)"}}
-                      {{ $color_rain := .Options.StringOr "color_rain" "var(--color-text-highlight)"}}
-                      {{ $color_freezing_rain := .Options.StringOr "color_freezing_rain" "var(--color-text-highlight)"}}
-                      {{ $color_snow := .Options.StringOr "color_snow" "var(--color-text-highlight)F"}}
-                      {{ $color_thunderstorm := .Options.StringOr "color_thunderstorm" "var(--color-text-highlight)"}}
-                      {{ $color_other := .Options.StringOr "color_other" "var(--color-text-highlight)"}}
-                    {{/* the following variables define the temperature gradient coloring for the daily rectangles */}}
-                    {{ $color_red := .Options.StringOr "color_red" "var(--color-negative)" }}
-                    {{ $color_yellow := .Options.StringOr "color_yellow" "var(--color-text-subdue)" }}
-                    {{ $color_blue := .Options.StringOr "color_blue" "var(--color-positive)" }}
-                    {{ $color_white := .Options.StringOr "color_white" "var(--color-text-highlight)" }}
-                    {{ $temp_red := .Options.FloatOr "temp_red" 27 }}
-                    {{ $temp_yellow := .Options.FloatOr "temp_yellow" 20 }}
-                    {{ $temp_blue := .Options.FloatOr "temp_blue" 10.0 }}
-                    {{ $temp_white := .Options.FloatOr "temp_white" 0 }}
-                    {{ if eq $temp_unit "fahrenheit" }}
-                      {{ $temp_red = .Options.FloatOr "temp_red" 80.0 }}
-                      {{ $temp_yellow = .Options.FloatOr "temp_yellow" 70.0 }}
-                      {{ $temp_blue = .Options.FloatOr "temp_blue" 50.0 }}
-                      {{ $temp_white = .Options.FloatOr "temp_white" 30.0 }}
-                    {{end}}
+          - type: bookmarks
+            groups:
+              - links:
+                - title: logs
+                  url: https://logs.fjorn.dev
+                  icon: sh:dozzle
+                - title: metrics
+                  url: https://beszel.fjorn.dev
+                  icon: sh:beszel
 
-                  {{/* Request 1: get latitude and longitude for user's city */}}
-                  {{ $location_string := replaceAll " " "%20" (.Options.StringOr "location" "") }}
-                  {{ $url1 := printf "https://geocoding-api.open-meteo.com/v1/search?name=%s&count=20&language=en&format=json" $location_string }}
-                  {{ $req1 := newRequest $url1 | getResponse }}
-                  {{ $latitude := $req1.JSON.String "results.0.latitude" }}
-                  {{ $longitude := $req1.JSON.String "results.0.longitude" }}
+          - $include: widget-config/weather.yml
 
-                  {{/* Request 2: get daily weather forecast based on latitude and longitude */}}
-                  {{ $url2 := printf "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&temperature_unit=%s&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=America/New_York" $latitude $longitude $temp_unit}}
-                  {{ $req2 := newRequest $url2 | getResponse }}
-
-                  <div style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
-
-                    {{/* Show abbreivated day of week */}}
-                    {{ $dates := $req2.JSON.Array "daily.time" }}
-                    <div style="position: relative; width: 100%; height: 25px;">
-                      {{ range $index, $date := $dates }}
-
-                        {{/* prepare to print M Tu W Th F Sa Su */}}
-                        {{ $dateString := .String "" }}
-                        {{ $parsedDate := $dateString | parseTime "DateOnly" }}
-                        {{ $dayOfWeek := $parsedDate.Format "Monday" | trimSuffix "day" | trimSuffix "on" | trimSuffix "es" | trimSuffix "edn" |
-                            trimSuffix "urs" | trimSuffix "ri" | trimSuffix "tur" | trimSuffix "n" }}
-
-                        {{/* highlight weekends (Sa Su) */}}
-                        {{ $day_color := "" }}
-                        {{ if eq $dayOfWeek "Sa" "Su" }}
-                          {{ $day_color = $weekend_color }}
-                        {{ end }}
-
-                        <div style="text-align: center; width: 10%; height: 25px; line-height: 25px; margin: 0 10% 0 3%; left: {{ mul $index 14 }}%; position: absolute; background-color: {{ $day_color | safeCSS }} ">
-                          <p class="size-h4 color-paragraph">{{ $dayOfWeek }}</p>
-                        </div>
-                      {{ end }}
-                    </div>
-
-                    {{/* Show numeric day of month */}}
-                    <div style="position: relative; width: 100%; height: 25px;">
-                      {{ range $index, $date := $dates }}
-                        {{ $dateString := .String "" }}
-                        {{ $trimmedDate := replaceMatches "[0-9]+-[0-9]+-" "" $dateString }}
-                        <div style="text-align: center; width: 10%; height: 25px; line-height: 25px; margin: 0 10% 0 3%; left: {{ mul $index 14 }}%; position: absolute;">
-                          <p class="size-h4 color-paragraph">{{ $trimmedDate }}</p>
-                        </div>
-                      {{ end }}
-                    </div>
-
-                    {{/* Show weather conditions using fontawesome icons */}}
-                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-                    {{ $codes := $req2.JSON.Array "daily.weathercode" }}
-
-                    <div style="position: relative; width: 100%; height: 30px;">
-                      {{ range $index, $thiscode := $codes }}
-                        {{ $code := .Int "" }}
-
-                        <div style="text-align: center; width: 10%; height: 25px; line-height: 25px; margin: 0 10% 0 3%; left: {{ mul $index 14 }}% ; position: absolute;">
-                        {{ $wtype := "" }}
-                        {{ $wicon := "" }}
-                        {{ $wcolor := "" }}
-                        {{ if eq $code 0 }}
-                          {{ $wtype = "Clear" }}
-                          {{ $wicon = "fas fa-sun" }}
-                          {{ $wcolor = $color_clear }}
-                        {{ else if eq $code 1 2 }}
-                          {{ $wtype = "Part Clear" }}
-                          {{ $wicon = "fas fa-cloud-sun" }}
-                          {{ $wcolor = $color_partly }}
-                        {{ else if eq $code 3 }}
-                          {{ $wtype = "Cloudy" }}
-                          {{ $wicon = "fas fa-cloud" }}
-                          {{ $wcolor = $color_cloud }}
-                        {{ else if eq $code 45 48 }}
-                          {{ $wtype = "Fog" }}
-                          {{ $wicon = "fas fa-smog" }}
-                          {{ $wcolor = $color_smog }}
-                        {{ else if eq $code 51 53 55 56 57 }}
-                          {{ $wtype = "Drizzle" }}
-                          {{ $wicon = "fas fa-cloud-rain" }}
-                          {{ $wcolor = $color_drizzle }}
-                        {{ else if eq $code 61 63 65 80 81 82 }}
-                          {{ $wtype = "Rain" }}
-                          {{ $wicon = "fas fa-cloud-showers-heavy" }}
-                          {{ $wcolor = $color_rain }}
-                        {{ else if eq $code 66 67 }}
-                          {{ $wtype = "Freezing Rain" }}
-                          {{ $wicon = "fas fa-snowflake" }}
-                          {{ $wcolor = $color_freezing_rain }}
-                        {{ else if eq $code 71 73 75 77 85 86 }}
-                          {{ $wtype = "Snow" }}
-                          {{ $wicon = "fas fa-snowman" }}
-                          {{ $wcolor = $color_snow }}
-                        {{ else if eq $code 95 96 99 }}
-                          {{ $wtype = "Thunderstorm" }}
-                          {{ $wicon = "fas fa-bolt" }}
-                          {{ $wcolor = $color_thunderstorm }}
-                        {{ else }}
-                          {{ $wtype = "Other" }}
-                          {{ $wicon = "fa-solid fa-question" }}
-                          {{ $wcolor = $color_other }}
-                        {{ end }}
-                        <i class={{ $wicon }} style="font-size: 20px; color: {{ $wcolor | safeCSS }};", title = {{$wtype }}></i>
-                        </div>
-                      {{ end }}
-                    </div>
-                  </div>
-
-                  {{/* ===== show daily min and max temperatures ===== */}}
-                  {{ $maxTemps := $req2.JSON.Array "daily.temperature_2m_max" }}
-                  {{ $minTemps := $req2.JSON.Array "daily.temperature_2m_min" }}
-
-                  {{/* get overall max and min temp over week's range */}}
-                  {{/* to determine vertical scale */}}
-                  <div style="display: flex; justify-content: flex-start; align-items: center;">
-
-                    {{ $max_max := 0 }}
-                    {{ range $maxTemps }}
-                        {{ if gt (.Int "") $max_max }}
-                          {{ $max_max = (.Int "") }}
-                        {{ end }}
-                    {{ end }}
-                    {{ $min_min := 999 }}
-                    {{ range $minTemps }}
-                        {{ if lt (.Int "") $min_min }}
-                          {{ $min_min = (.Int "") }}
-                        {{ end }}
-                    {{ end }}
-
-                    {{/* add a small buffer */}}
-                    {{ $max_max = add $max_max 1 }}
-                    {{ $min_min = sub $min_min 1 }}
-
-                    {{/* outer div to contain the temp chart */}}
-                    <div style="position: relative; width: 100%; height: 75px;">
-                      {{/* get relative % heights for each daily max and min */}}
-                      {{ $temp_range := sub $max_max $min_min }}
-
-                      {{ range $index, $thisHigh := $maxTemps }}
-                          {{ $thisLow := index $minTemps $index }}
-                          {{ $thisHigh = $thisHigh.Float "" }}
-                          {{ $thisLow = $thisLow.Float "" }}
-
-                          {{ $thisHighPct := sub 1 (div (sub $max_max $thisHigh) $temp_range) }}
-                          {{ $thisLowPct := div (sub $thisLow $min_min) $temp_range }}
-
-                          {{/* define color gradient per. values between $temp_red and $temp_yellow are shown as a color gradient from $color_red to $color_yellow */}}
-                          {{/* for colors partially in range, can represent as negative percent */}}
-                          {{ $thisTempRange := sub $thisHigh $thisLow }}
-                          {{ $red_pos := mul 100 (div (sub $thisHigh $temp_red) $thisTempRange) | toInt }}
-                          {{ $yel_pos := mul 100 (div (sub $thisHigh $temp_yellow) $thisTempRange) | toInt }}
-                          {{ $blu_pos := mul 100 (div (sub $thisHigh $temp_blue) $thisTempRange) | toInt }}
-                          {{ $whi_pos := mul 100 (div (sub $thisHigh $temp_white) $thisTempRange) | toInt }}
-                          {{ $gradient_string := printf "%s %d%%, %s %d%%, %s %d%%, %s %d%%" $color_red $red_pos $color_yellow $yel_pos $color_blue $blu_pos $color_white $whi_pos }}
-
-                          {{/* output daily div */}}
-                          <div style="left: {{ mul $index 14 | add 3 }}%; bottom: {{ mul $thisLowPct 100 | toInt }}%;
-                            height: {{ mul (sub $thisHighPct $thisLowPct) 100 | toInt }}%; position: absolute;
-                            background:linear-gradient({{ $gradient_string | safeCSS }}); width: 10%; text-align: center; border-radius: 10px;">
-
-                            {{/* Based on rectangle height & position, print high and low temperatures either inside or outside the rectangle. */}}
-                            {{ $top_pos := -2 }}
-                            {{ $bot_pos := -2 }}
-                            {{ $pos_thresh := 0.20 }}
-                            {{ if lt (div $thisTempRange $temp_range) $pos_thresh }}
-                              {{ $top_pos = -17 }}
-                              {{ $bot_pos = -19 }}
-                            {{ else if and (lt (div $thisTempRange $temp_range) (mul $pos_thresh 2)) (lt (sub 1 $thisHighPct) $thisLowPct) }}
-                              {{ $bot_pos = -19 }}
-                            {{ else if and (lt (div $thisTempRange $temp_range) (mul $pos_thresh 2)) (gt (sub 1 $thisHighPct) $thisLowPct) }}
-                              {{ $top_pos = -17 }}
-                            {{ end }}
-                              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: {{ $overlay_color | safeCSS }}; z-index: 1;  border-radius: 10px;">
-                                <p style='color: #F0F0F0; position: absolute; top: {{ $top_pos }}px; left: 0px; right: 0px'>{{ $thisHigh | toInt }}</p>
-                                <p style='color: #F0F0F0; position: absolute; bottom: {{ $bot_pos }}px; left: 0px; right:0px'>{{ $thisLow | toInt }}</p>
-                              </div>
-                            </div>
-                      {{ end }}
-
-                    </div>
-                  </div>
-          - type: custom-api
-            title: Air Quality
-            cache: 10m
-            url: https://api.waqi.info/feed/geo:${LAT};${LON}/?token=${AQI_TOKEN}
-            template: |
-              {{ $aqi := printf "%03s" (.JSON.String "data.aqi") }}
-              {{ $aqiraw := .JSON.String "data.aqi" }}
-              {{ $updated := .JSON.String "data.time.iso" }}
-              {{ $humidity := .JSON.String "data.iaqi.h.v" }}
-              {{ $ozone := .JSON.String "data.iaqi.o3.v" }}
-              {{ $pm25 := .JSON.String "data.iaqi.pm25.v" }}
-              {{ $pressure := .JSON.String "data.iaqi.p.v" }}
-
-              <div class="flex justify-between">
-                <div class="size-h5">
-                  {{ if le $aqi "050" }}
-                    <div class="color-positive">Good air quality</div>
-                  {{ else if le $aqi "100" }}
-                    <div class="color-primary">Moderate air quality</div>
-                  {{ else }}
-                    <div class="color-negative">Bad air quality</div>
-                  {{ end }}
-                </div>
-              </div>
-
-              <div class="color-highlight size-h2">AQI: {{ $aqiraw }}</div>
-              <div style="border-bottom: 1px solid; margin-block: 10px;"></div>
-
-              <div class="margin-block-2">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-
-                  <div>
-                    <div class="size-h3 color-highlight">{{ $humidity }}%</div>
-                    <div class="size-h6">HUMIDITY</div>
-                  </div>
-
-                  <div>
-                    <div class="size-h3 color-highlight">{{ $ozone }} μg/m³</div>
-                    <div class="size-h6">OZONE</div>
-                  </div>
-
-                  <div>
-                    <div class="size-h3 color-highlight">{{ $pm25 }} μg/m³</div>
-                    <div class="size-h6">PM2.5</div>
-                  </div>
-
-                  <div>
-                    <div class="size-h3 color-highlight">{{ $pressure }} hPa</div>
-                    <div class="size-h6">PRESSURE</div>
-                  </div>
-
-                </div>
-
-                <div class="size-h6" style="margin-top: 10px;">Last Updated at {{ slice $updated 11 16 }}</div>
-              </div>
+          - $include: widget-config/aqi.yml
 
           - type: custom-api
             height: 300px
@@ -316,218 +55,9 @@ pages:
         widgets:
           - type: to-do
 
-          - type: custom-api
-            title: gcal
-            cache: 15m
-            url: http://glances-ical-api:8076/events
-            parameters:
-              url: https://calendar.google.com/calendar/ical/fern%40with.co/private-be9be29f347d5c9c1118a6a204fd3cde/basic.ics
-              limit: 10
-            template: |
-              {{ $events := .JSON.Array "events" }}
-              {{ $count := len $events }}
-              {{ $limit := 3 }} <!-- how many upcoming to show before collapse -->
-              {{ if eq $count 0 }}
-              <div style="padding:8px 10px; border-radius:10px; background:var(--surface-2);">
-                No entries found.
-              </div>
-              {{ end }}
-              <!-- 1) Ongoing first (never collapsible) -->
-              <ul class="list list-gap-10">
-              {{ range $i, $e := $events }}
-                {{ $ongoing := $e.Bool "ongoing" }}
-                {{ if $ongoing }}
-                  {{ $start := $e.String "start" | parseTime "rfc3339" }}
-                  {{ $end := $e.String "end" | parseTime "rfc3339" }}
-                  {{ $name := $e.String "name" }}
-                  {{ $url := $e.String "url" }}
-                  {{ $durationSec := $e.Int "durationSeconds" }}
-                  {{ $durationMin := div $durationSec 60 }}
-                  <li>
-                    <div class="flex items-center justify-between gap-10">
-                      <!-- Left: name (highlight) + absolute date + time + duration -->
-                      <div>
-                        {{ if $url }}
-                        <a class="size-h3 color-highlight block text-truncate" href="{{ $url }}" target="_blank" rel="noreferrer" title="{{ $name }}">{{ $name }}</a>
-                        {{ else }}
-                        <span class="size-h3 color-highlight block text-truncate" title="{{ $name }}">{{ $name }}</span>
-                        {{ end }}
-                        <div style="font-size:.85em;">
-                          {{ $start | formatTime "Mon, 02 Jan 2006" }} at {{ $start | formatTime "15:04" }} · {{ $durationMin }}min
-                        </div>
-                      </div>
-                      <!-- Right: relative time until END -->
-                      <div class="size-h3 color-primary" style="white-space:nowrap;">
-                        ends <span {{ $end | toRelativeTime }}></span>
-                      </div>
-                    </div>
-                  </li>
-                {{ end }}
-              {{ end }}
-              </ul>
-              <!-- 2) Upcoming, collapsible after $limit -->
-              {{ $shown := 0 }}
-              <ul class="list list-gap-10 collapsible-container" data-collapse-after="{{ $limit }}">
-              {{ range $i, $e := $events }}
-                {{ $ongoing := $e.Bool "ongoing" }}
-                {{ if not $ongoing }}
-                  {{ $start := $e.String "start" | parseTime "rfc3339" }}
-                  {{ $name := $e.String "name" }}
-                  {{ $url := $e.String "url" }}
-                  {{ $durationSec := $e.Int "durationSeconds" }}
-                  {{ $durationMin := div $durationSec 60 }}
-                  <li {{ if ge $shown $limit }}class="collapsible-item"{{ end }}>
-                    <div class="flex items-center justify-between gap-10">
-                      <!-- Left: name (highlight) + absolute date + time + duration -->
-                      <div>
-                        {{ if $url }}
-                        <a class="size-h3 color-highlight block text-truncate" href="{{ $url }}" target="_blank" rel="noreferrer" title="{{ $name }}">{{ $name }}</a>
-                        {{ else }}
-                        <span class="size-h3 color-highlight block text-truncate" title="{{ $name }}">{{ $name }}</span>
-                        {{ end }}
-                        <div style="font-size:.85em;">
-                          {{ $start | formatTime "Mon, 02 Jan 2006" }} at {{ $start | formatTime "15:04" }} · {{ $durationMin }}min
-                        </div>
-                      </div>
-                      <!-- Right: relative time until START -->
-                      <div class="size-h3 color-primary" style="white-space:nowrap;" {{ $start | toRelativeTime }}></div>
-                    </div>
-                  </li>
-                  {{ $shown = add $shown 1 }}
-                {{ end }}
-              {{ end }}
-              </ul>
+          - $include: widget-config/gcal.yml
 
-          - type: custom-api
-            title: Spotify
-            cache: 1s
-            template: |
-              <style>
-                .offline-indicator {
-                  width: 8px;
-                  height: 8px;
-                  border-radius: 50%;
-                  background-color: var(--color-negative);
-                  display: inline-block;
-                  margin-left: 4px;
-                  vertical-align: middle;
-                }
-
-                .indicators-container {
-                  display: flex;
-                  align-items: center;
-                  gap: 4px;
-                }
-              </style>
-              {{
-                $tokenRes := newRequest "https://accounts.spotify.com/api/token"
-                  | withHeader "Authorization" "Basic ${SPOTIFY_BTOA}"
-                  | withHeader "Content-Type" "application/x-www-form-urlencoded"
-                  | withStringBody "grant_type=refresh_token&refresh_token=${SPOTIFY_REFRESH}"
-                  | getResponse
-              }}
-
-              {{ if eq $tokenRes.Response.StatusCode 200 }}
-                {{ $accessToken := $tokenRes.JSON.String "access_token" }}
-
-                {{ $currentlyPlaying := newRequest "https://api.spotify.com/v1/me/player"
-                    | withHeader "Authorization" (print "Bearer " $accessToken)
-                    | getResponse
-                }}
-                {{ if eq $currentlyPlaying.Response.StatusCode 204 }}
-                <div class="flex items-center">
-                  <p style="margin-right:10px;">Offline</p>
-                  <div class="indicators-container">
-                    <span class="offline-indicator" data-popover-type="text"
-                          data-popover-text="No current playback">
-                    </span>
-                  </div>
-                </div>
-                {{ end}}
-
-                {{ $isCurrentlyPlaying := $currentlyPlaying.JSON.Bool "is_playing" }}
-                {{ $isDeviceActive := $currentlyPlaying.JSON.Bool "device.is_active" }}
-                {{ $isPrivateSession := $currentlyPlaying.JSON.Bool "device.is_private_session" }}
-                {{ $deviceName := $currentlyPlaying.JSON.String "device.name" }}
-                {{ $queueRes := newRequest "https://api.spotify.com/v1/me/player/queue"
-                    | withHeader "Authorization" (print "Bearer " $accessToken)
-                    | getResponse
-                }}
-
-                {{ if eq $queueRes.Response.StatusCode 200 }}
-                  {{ $data := $queueRes.JSON }}
-                  {{ $queue := $data.Array "queue" }}
-
-                  {{ $artist := $data.String "currently_playing.artists.0.name" }}
-
-                  {{ if gt (len $artist) 0 }}
-                  <div class="size-h5">NOW PLAYING</div>
-                  <div class="widget-content-frame flex flex-row items-center gap-20" style="padding: 4px; margin-top: 4px; margin-bottom: 4px;">
-                    <div>
-                      <img src="{{ $data.String "currently_playing.album.images.0.url" }}" style="border-radius: 5px; width: 5rem;" class="card">
-                    </div>
-                    <div class="flex grow flex-column justify-center pr-2">
-                      <div class="color-positive size-h4 font-bold">{{ $data.String "currently_playing.name" }}</div>
-                      <div class="size-h5">{{ $artist }}</div>
-                    </div>
-                    {{ if and $isDeviceActive (not $isPrivateSession) }}
-                      {{ if $isCurrentlyPlaying }}
-                        <div style="margin-right:10px; height: 100%; display: flex; flex-direction: column;">
-                          <button style="font-size:25px;" onclick="fetch('https://api.spotify.com/v1/me/player/pause',{method:'PUT',headers:{'Authorization':'Bearer {{$accessToken}}'}}); setTimeout(function(){ location.reload(); }, 2000);">⏸</button>
-                          <p>{{ $deviceName }}</p>
-                        </div>
-                      {{ else }}
-                        <div style="margin-right:10px; height: 100%; display: flex; flex-direction: column;">
-                          <button style="font-size:25px;" onclick="fetch('https://api.spotify.com/v1/me/player/play',{method:'PUT',headers:{'Authorization':'Bearer {{$accessToken}}'}}); setTimeout(function(){ location.reload(); }, 2000);">▶</button>
-                          <p>{{ $deviceName }}</p>
-                        </div>
-                      {{ end }}
-                    {{ else if $isPrivateSession }}
-                    <p style="margin-right:10px;">Private session</p>
-                    {{ else }}
-                    <p style="margin-right:10px;">Error</p>
-                    {{ end }}
-                  </div>
-                  {{ end }}
-
-                  {{ if gt (len $queue) 0 }}
-                    <div class="size-h5 color-muted font-bold" style="margin-top: 10px;">UPCOMING:</div>
-                    {{ range $i, $track := $queue }}
-                      {{ if lt $i 5 }}
-                        <div
-                          class="widget-content-frame flex flex-row items-center gap-20"
-                          style="padding: 4px; margin-top: 4px; margin-bottom: 4px; cursor: pointer;"
-                          onclick="(function(){
-                            for (let j = 0; j < {{ add $i 1}}; j++) {
-                              fetch('https://api.spotify.com/v1/me/player/next', {
-                                method: 'POST',
-                                headers: {
-                                  'Authorization': 'Bearer {{ $accessToken }}'
-                                }
-                              });
-                            }
-                            setTimeout(() => location.reload(), 2000);
-                          })()"
-                        >
-                          <div>
-                            <img src="{{ $track.String "album.images.0.url" }}" style="border-radius: 5px; width: 5rem;" class="card">
-                          </div>
-                          <div class="flex grow flex-column justify-center pr-2">
-                            <div class="color-positive size-h4 font-bold">{{ $track.String "name" }}</div>
-                            <div class="size-h5">{{ $track.String "artists.0.name" }}</div>
-                          </div>
-                        </div>
-                      {{ end }}
-                    {{ end }}
-                  {{ end }}
-
-                {{ else }}
-                  <p>Failed to fetch queue: {{ $queueRes.Response.Status }}</p>
-                {{ end }}
-
-              {{ else }}
-                <p>Failed to get token: {{ $tokenRes.Response.Status }}</p>
-              {{ end }}
+          - $include: widget-config/spotify.yml
 
       - size: small
         widgets:
@@ -541,6 +71,10 @@ pages:
                 icon: sh:discord
               beeper-facebook:
                 icon: sh:facebook-messenger
+              dozzle:
+                icon: sh:dozzle
+              beszel:
+                icon: sh:beszel
               lil-homie-glances-ical-api-1:
                 name: gcal-api
                 icon: sh:google-calendar
@@ -549,47 +83,11 @@ pages:
               glance:
                 hide: true
 
-          - type: custom-api
-            title: Cloudflared Tunnels
-            css-class: "widget-type-cloudflared"
-            cache: 4h
-            url: https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/cfd_tunnel/${CLOUDFLARE_TUNNEL_ID}/configurations
-            headers:
-              Authorization: Bearer ${CLOUDFLARE_API_KEY}
-            template: |
-              {{ $domain_name := ".example.com" }}  {{/* Set your domain name */}}
+          - $include: widget-config/launchctl-agents.yml
 
-              <style>
-                .widget-type-cloudflared li {
-                  margin-top: var(--list-half-gap);
-                  border-top: 1px solid var(--color-separator);
-                  padding-top: var(--list-half-gap);
-                }
-              </style>
-              <ul class="dynamic-columns list-gap-15 list-with-separator">
-              {{ range .JSON.Array "result.config.ingress" }}
-                {{ if (.String "hostname") }}
-                <li class="flex items-center gap-20">
-                    <div class="shrink-0">
-                        <img class="docker-container-icon" src="https://developers.cloudflare.com/logo.svg" alt="" loading="lazy">
-                    </div>
-                    <div class="min-width-0 grow">
-                      <a href='https://{{ .String "hostname" }}' class="color-highlight size-title-dynamic block text-truncate" target="_blank" rel="noreferrer">{{ .String "hostname" | trimSuffix $domain_name }}</a>
-                      {{ if (.String "service") }}
-                      <div class="flex items-center gap-10" style="margin-bottom: 5px">
-                        <div class="text-left">
-                          <img src="assets/img/link-down-right.png" style="width: auto; height: 20px; margin-left: 0px; margin-top: -4px;">
-                        </div>
-                        <div class="size-h6 flex-1 text-left">
-                          <a href='{{ .String "service" | replaceAll "localhost" "192.168.0.150" }}' target="_blank" rel="noreferrer">{{ .String "service" }}</a>
-                        </div>
-                      </div>
-                      {{ end}}
-                    </div>
-                </li>
-                {{ end }}
-              {{ end }}
-              </ul>
+          - $include: widget-config/cloudflare.yml
+
+          - $include: widget-config/beszel.yml
 
           - type: monitor
             cache: 1m
@@ -599,112 +97,4 @@ pages:
                 url: https://fjorn.dev
                 icon: https://fjorn.dev/favicon.svg
 
-          - type: server-stats
-            servers:
-              - type: local
-                name: Server Stats
-
-          - type: custom-api
-            cache: 1h
-            title: Internet Speed
-            title-url: ${SPEEDTEST_URL}
-            url: ${SPEEDTEST_URL}/api/v1/results/latest
-            headers:
-              Authorization: Bearer ${SPEEDTEST_TRACKER_API_TOKEN}
-              Accept: application/json
-            subrequests:
-              stats:
-                url: ${SPEEDTEST_URL}/api/v1/stats
-                headers:
-                  Authorization: Bearer ${SPEEDTEST_TRACKER_API_TOKEN}
-                  Accept: application/json
-            options:
-              showPercentageDiff: true
-            template: |
-              {{ $showPercentage := .Options.BoolOr "showPercentageDiff" true }}
-
-              {{ $stats := .Subrequest "stats" }}
-              <div class="flex justify-between text-center margin-block-3">
-              <div>
-                  {{ $downloadChange := percentChange ($stats.JSON.Float "data.download.avg_bits") (.JSON.Float "data.download_bits")
-                  }}
-                  {{ if $showPercentage }}
-                  <div
-                  class="size-small {{ if gt $downloadChange 0.0 }}color-positive{{ else if lt $downloadChange 0.0 }}color-negative{{ else }}color-primary{{ end }}"
-                  style="display: inline-flex; align-items: center;">
-                  {{ $downloadChange | printf "%+.1f%%" }}
-                  {{ if gt $downloadChange 0.0 }}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
-                      style="height: 1em; margin-left: 0.25em;" class="size-4">
-                      <path fill-rule="evenodd"
-                      d="M9.808 4.057a.75.75 0 0 1 .92-.527l3.116.849a.75.75 0 0 1 .528.915l-.823 3.121a.75.75 0 0 1-1.45-.382l.337-1.281a23.484 23.484 0 0 0-3.609 3.056.75.75 0 0 1-1.07.01L6 8.06l-3.72 3.72a.75.75 0 1 1-1.06-1.061l4.25-4.25a.75.75 0 0 1 1.06 0l1.756 1.755a25.015 25.015 0 0 1 3.508-2.85l-1.46-.398a.75.75 0 0 1-.526-.92Z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  {{ else if lt $downloadChange 0.0 }}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
-                      style="height: 1em; margin-left: 0.25em;" class="size-4">
-                      <path fill-rule="evenodd"
-                      d="M1.22 4.22a.75.75 0 0 1 1.06 0L6 7.94l2.761-2.762a.75.75 0 0 1 1.158.12 24.9 24.9 0 0 1 2.718 5.556l.729-1.261a.75.75 0 0 1 1.299.75l-1.591 2.755a.75.75 0 0 1-1.025.275l-2.756-1.591a.75.75 0 1 1 .75-1.3l1.097.634a23.417 23.417 0 0 0-1.984-4.211L6.53 9.53a.75.75 0 0 1-1.06 0L1.22 5.28a.75.75 0 0 1 0-1.06Z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  {{ end }}
-                  </div>
-                  {{ end }}
-                  <div class="color-highlight size-h3">{{ .JSON.Float "data.download_bits" | mul 0.000001 | printf "%.1f" }}</div>
-                  <div class="size-h6">DOWNLOAD</div>
-              </div>
-              <div>
-                  {{ $uploadChange := percentChange ($stats.JSON.Float "data.upload.avg_bits") (.JSON.Float "data.upload_bits") }}
-                  {{ if $showPercentage }}
-                  <div
-                  class="size-small {{ if gt $uploadChange 0.0 }}color-positive{{ else if lt $uploadChange 0.0 }}color-negative{{ else }}color-primary{{ end }}"
-                  style="display: inline-flex; align-items: center;">
-                  {{ $uploadChange | printf "%+.1f%%" }}
-                  {{ if gt $uploadChange 0.0 }}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
-                      style="height: 1em; margin-left: 0.25em;" class="size-4">
-                      <path fill-rule="evenodd"
-                      d="M9.808 4.057a.75.75 0 0 1 .92-.527l3.116.849a.75.75 0 0 1 .528.915l-.823 3.121a.75.75 0 0 1-1.45-.382l.337-1.281a23.484 23.484 0 0 0-3.609 3.056.75.75 0 0 1-1.07.01L6 8.06l-3.72 3.72a.75.75 0 1 1-1.06-1.061l4.25-4.25a.75.75 0 0 1 1.06 0l1.756 1.755a25.015 25.015 0 0 1 3.508-2.85l-1.46-.398a.75.75 0 0 1-.526-.92Z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  {{ else if lt $uploadChange 0.0 }}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
-                      style="height: 1em; margin-left: 0.25em;" class="size-4">
-                      <path fill-rule="evenodd"
-                      d="M1.22 4.22a.75.75 0 0 1 1.06 0L6 7.94l2.761-2.762a.75.75 0 0 1 1.158.12 24.9 24.9 0 0 1 2.718 5.556l.729-1.261a.75.75 0 0 1 1.299.75l-1.591 2.755a.75.75 0 0 1-1.025.275l-2.756-1.591a.75.75 0 1 1 .75-1.3l1.097.634a23.417 23.417 0 0 0-1.984-4.211L6.53 9.53a.75.75 0 0 1-1.06 0L1.22 5.28a.75.75 0 0 1 0-1.06Z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  {{ end }}
-                  </div>
-                  {{ end }}
-                  <div class="color-highlight size-h3">{{ .JSON.Float "data.upload_bits" | mul 0.000001 | printf "%.1f" }}</div>
-                  <div class="size-h6">UPLOAD</div>
-              </div>
-              <div>
-                  {{ $pingChange := percentChange ($stats.JSON.Float "data.ping.avg") (.JSON.Float "data.ping") }}
-                  {{ if $showPercentage }}
-                  <div
-                  class="size-small {{ if gt $pingChange 0.0 }}color-negative{{ else if lt $pingChange 0.0 }}color-positive{{ else }}color-primary{{ end }}"
-                  style="display: inline-flex; align-items: center;">
-                  {{ $pingChange | printf "%+.1f%%" }}
-                  {{ if lt $pingChange 0.0 }}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
-                      style="height: 1em; margin-left: 0.25em;" class="size-4">
-                      <path fill-rule="evenodd"
-                      d="M1.22 4.22a.75.75 0 0 1 1.06 0L6 7.94l2.761-2.762a.75.75 0 0 1 1.158.12 24.9 24.9 0 0 1 2.718 5.556l.729-1.261a.75.75 0 0 1 1.299.75l-1.591 2.755a.75.75 0 0 1-1.025.275l-2.756-1.591a.75.75 0 1 1 .75-1.3l1.097.634a23.417 23.417 0 0 0-1.984-4.211L6.53 9.53a.75.75 0 0 1-1.06 0L1.22 5.28a.75.75 0 0 1 0-1.06Z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  {{ else if gt $pingChange 0.0 }}
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
-                      style="height: 1em; margin-left: 0.25em;" class="size-4">
-                      <path fill-rule="evenodd"
-                      d="M9.808 4.057a.75.75 0 0 1 .92-.527l3.116.849a.75.75 0 0 1 .528.915l-.823 3.121a.75.75 0 0 1-1.45-.382l.337-1.281a23.484 23.484 0 0 0-3.609 3.056.75.75 0 0 1-1.07.01L6 8.06l-3.72 3.72a.75.75 0 1 1-1.06-1.061l4.25-4.25a.75.75 0 0 1 1.06 0l1.756 1.755a25.015 25.015 0 0 1 3.508-2.85l-1.46-.398a.75.75 0 0 1-.526-.92Z"
-                      clip-rule="evenodd" />
-                  </svg>
-                  {{ end }}
-                  </div>
-                  {{ end }}
-                  <div class="color-highlight size-h3">{{ .JSON.Float "data.ping" | printf "%.0f ms" }}</div>
-                  <div class="size-h6">PING</div>
-              </div>
-              </div>
+          - $include: widget-config/speedtest.yml

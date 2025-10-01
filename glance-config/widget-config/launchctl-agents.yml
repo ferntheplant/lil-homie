@@ -1,0 +1,32 @@
+- type: custom-api
+  title: Launchctl Agents
+  url: http://host.docker.internal:8765/status
+  cache: 30s
+  template: |
+    <ul class="list list-gap-10">
+      {{ range .JSON.Array "services" }}
+      {{ if .Bool "running" }}
+      <li class="flex items-center justify-between gap-3 p-2 rounded bg-green-500/10">
+        <div class="flex-1 min-w-0">
+          <div class="size-h4">{{ .String "name" }}</div>
+          <div class="size-h6 color-subdue">{{ .String "label" }}</div>
+        </div>
+        <div class="flex flex-col items-end size-h6 color-subdue">
+          <span>{{ .String "status" }}</span>
+        </div>
+        <span class="color-positive" style="font-size: 1.5rem; line-height: 1; margin-left: 10px;">●</span>
+      </li>
+      {{ else }}
+      <li class="flex items-center justify-between gap-3 p-2 rounded bg-red-500/10">
+        <div class="flex-1 min-w-0">
+          <div class="size-h4">{{ .String "name" }}</div>
+          <div class="size-h6 color-subdue">{{ .String "label" }}</div>
+        </div>
+        <div class="flex flex-col items-end size-h6 color-subdue">
+          <span>{{ .String "status" }}</span>
+        </div>
+        <span class="color-negative" style="font-size: 1.5rem; line-height: 1;">○</span>
+      </li>
+      {{ end }}
+      {{ end }}
+    </ul>
