@@ -3,9 +3,10 @@
   url: http://${BESZEL_URL}/api/collections/systems/records
   method: GET
   options:
-    redirect-url: "https://beszel.fjorn.dev"
+    redirect-url: "https://lil-homie.fjorn.dev/beszel"
     in-new-tab: true
     hide-kernel: true
+    hide-cpu-info: true
     hide-ip: true
   headers:
     Authorization: Bearer ${BESZEL_TOKEN}

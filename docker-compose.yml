@@ -12,9 +12,9 @@ services:
     networks:
       - proxy_network
   discord:
-    extends:
-      file: ./common-services.yml
-      service: beeper-bridge
+    image: ghcr.io/beeper/bridge-manager
+    env_file: ./.env
+    restart: unless-stopped
     container_name: beeper-discord
     volumes:
       - ${DATA_PATH}/beeper-discord:/data
@@ -22,9 +22,9 @@ services:
       BRIDGE_NAME: sh-discord
 
   signal:
-    extends:
-      file: ./common-services.yml
-      service: beeper-bridge
+    image: ghcr.io/beeper/bridge-manager
+    env_file: ./.env
+    restart: unless-stopped
     container_name: beeper-signal
     volumes:
       - ${DATA_PATH}/beeper-signal:/data
@@ -32,9 +32,9 @@ services:
       BRIDGE_NAME: sh-signal
 
   facebook:
-    extends:
-      file: ./common-services.yml
-      service: beeper-bridge
+    image: ghcr.io/beeper/bridge-manager
+    env_file: ./.env
+    restart: unless-stopped
     container_name: beeper-facebook
     volumes:
       - ${DATA_PATH}/beeper-facebook:/data

@@ -3,7 +3,7 @@
   cache: 15m
   url: http://glances-ical:8076/events
   parameters:
-    url: https://calendar.google.com/calendar/ical/fern%40with.co/private-be9be29f347d5c9c1118a6a204fd3cde/basic.ics
+    url: ${CALENDAR_URL}
     limit: 10
   template: |
     {{ $events := .JSON.Array "events" }}
