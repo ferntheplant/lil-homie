@@ -1,5 +1,16 @@
-# Each service is a separate bridge container, named according to the bridge service it runs
 services:
+  caddy:
+    container_name: caddy
+    restart: unless-stopped
+    image: caddy:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ${DATA_PATH}/caddy_data:/data
+      - ${DATA_PATH}/caddy_config:/config
+    networks:
+      - proxy_network
   discord:
     extends:
       file: ./common-services.yml
@@ -33,20 +44,29 @@ services:
   dozzle:
     container_name: dozzle
     image: amir20/dozzle:latest
+    restart: unless-stopped
+    environment:
+      - DOZZLE_BASE=/logs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - 8082:8080
+    networks:
+      - proxy_network
 
   beszel:
     image: henrygd/beszel:latest
     container_name: beszel
     restart: unless-stopped
+    environment:
+      - APP_URL=https://lil-homie.fjorn.dev/beszel
     ports:
       - 8090:8090
     volumes:
       - ${DATA_PATH}/beszel_data:/beszel_data
       - ${DATA_PATH}/beszel_socket:/beszel_socket
+    networks:
+      - proxy_network
 
   beszel-agent:
     image: henrygd/beszel-agent:latest
@@ -68,11 +88,18 @@ services:
     image: fjorn-glance:1.0.0
     restart: unless-stopped
     env_file: ./.env
+    environment:
+      - SPEEDTEST_URL=http://speedtest-tracker
+      - WEATHER_LOCATION=New York, United States
+      - BESZEL_URL=beszel:8090
+      - SYNCTHING_URL=http://syncthing:8384
     volumes:
       - ./glance-config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 8080:8080
+      - 8088:8080
+    networks:
+      - proxy_network
 
   speedtest-tracker:
     image: lscr.io/linuxserver/speedtest-tracker:latest
@@ -86,10 +113,35 @@ services:
       - PGID=1000
       - APP_KEY=${SPEEDTEST_TRACKER_APP_KEY}
       - DB_CONNECTION=sqlite
+      - SPEEDTEST_SCHEDULE="6 */2 * * *"
     volumes:
       - ${DATA_PATH}/speedtest-tracker:/config
+    networks:
+      - proxy_network
 
-  glances-ical-api:
+  glances-ical:
+    container_name: glances-ical
     image: ghcr.io/awildleon/glance-ical-events:latest
-    restart: always
+    restart: unless-stopped
     env_file: ./.env
+    networks:
+      - proxy_network
+
+  syncthing:
+    image: syncthing/syncthing
+    container_name: syncthing
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ${DATA_PATH}/syncthing:/var/syncthing
+    networks:
+      - proxy_network
+    ports:
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 8384:8384
+
+networks:
+  proxy_network:

@@ -1,0 +1,24 @@
+:80 {
+  handle /logs* {
+    reverse_proxy dozzle:8080
+  }
+
+  handle_path /beszel* {
+    reverse_proxy beszel:8090 {
+      transport http {
+        read_timeout 360s
+      }
+    }
+  }
+
+  @syncthing_root path /syncthing
+  redir @syncthing_root /syncthing/ 308
+
+  handle_path /syncthing* {
+    reverse_proxy syncthing:8384
+  }
+
+  handle /* {
+    reverse_proxy glance:8080
+  }
+}

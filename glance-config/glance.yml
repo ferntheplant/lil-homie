@@ -32,11 +32,14 @@ pages:
           - type: bookmarks
             groups:
               - links:
+                - title: syncthing
+                  url: https://lil-homie.fjorn.dev/syncthing
+                  icon: sh:syncthing
                 - title: logs
-                  url: https://logs.fjorn.dev
+                  url: https://lil-homie.fjorn.dev/logs
                   icon: sh:dozzle
                 - title: metrics
-                  url: https://beszel.fjorn.dev
+                  url: https://lil-homie.fjorn.dev/beszel
                   icon: sh:beszel
 
           - $include: widget-config/weather.yml
@@ -57,14 +60,12 @@ pages:
 
           - $include: widget-config/gcal.yml
 
-          - $include: widget-config/spotify.yml
-
-      - size: small
-        widgets:
           - type: docker-containers
             title: Docker
             hide-by-default: false
             containers:
+              caddy:
+                icon: sh:caddy
               beeper-signal:
                 icon: sh:signal
               beeper-discord:
@@ -75,19 +76,23 @@ pages:
                 icon: sh:dozzle
               beszel:
                 icon: sh:beszel
-              lil-homie-glances-ical-api-1:
+              glances-ical:
                 name: gcal-api
                 icon: sh:google-calendar
               speedtest-tracker:
                 icon: sh:speedtest-tracker
+              syncthing:
+                icon: sh:syncthing
               glance:
                 hide: true
 
+          - $include: widget-config/spotify.yml
+
+      - size: small
+        widgets:
+          - $include: widget-config/syncthing.yml
+
           - $include: widget-config/launchctl-agents.yml
-
-          - $include: widget-config/cloudflare.yml
-
-          - $include: widget-config/beszel.yml
 
           - type: monitor
             cache: 1m
@@ -96,5 +101,9 @@ pages:
               - title: fjorn.dev
                 url: https://fjorn.dev
                 icon: https://fjorn.dev/favicon.svg
+
+          - $include: widget-config/cloudflare.yml
+
+          - $include: widget-config/beszel.yml
 
           - $include: widget-config/speedtest.yml

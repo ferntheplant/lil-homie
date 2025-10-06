@@ -2,7 +2,11 @@
 
 TODO: actually fill out explanations for the below sections
 
+TODO: exmaple .env
+
 ## Cloudflare
+
+## Caddy
 
 ## Beeper
 
@@ -25,3 +29,5 @@ TODO: actually fill out explanations for the below sections
 ### [Weather](https://github.com/glanceapp/community-widgets/blob/main/widgets/weather-seven-day/README.md)
 
 ## iMessage Monitor
+
+## Syncthing
