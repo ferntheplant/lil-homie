@@ -18,6 +18,8 @@ TODO: exmaple .env
 
 ### [Beszel](https://github.com/glanceapp/community-widgets/blob/main/widgets/beszel-metrics/README.md)
 
+### [Syncthing](https://github.com/glanceapp/community-widgets/blob/main/widgets/syncthing/README.md)
+
 ### [gcal](https://github.com/AWildLeon/Glance-iCal-Events)
 
 ### `launchctl` agents
