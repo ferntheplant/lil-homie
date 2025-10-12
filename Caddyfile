@@ -1,3 +1,7 @@
+:3003 {
+  reverse_proxy karakeep-web:3000
+}
+
 :80 {
   handle /logs* {
     reverse_proxy dozzle:8080
@@ -16,6 +20,13 @@
 
   handle_path /syncthing* {
     reverse_proxy syncthing:8384
+  }
+
+  @backrest_root path /backrest
+  redir @backrest_root /backrest/ 308
+
+  handle_path /backrest* {
+    reverse_proxy backrest:9898
   }
 
   handle /* {

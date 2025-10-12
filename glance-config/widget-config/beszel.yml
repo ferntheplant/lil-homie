@@ -9,7 +9,7 @@
     hide-cpu-info: true
     hide-ip: true
   headers:
-    Authorization: Bearer ${BESZEL_TOKEN}
+    Authorization: Bearer ${BESZEL_API_TOKEN}
     Accept: application/json
   template: |
     {{ $redirect := .Options.StringOr "redirect-url" "" }}
@@ -20,6 +20,11 @@
     {{ $hideIP := .Options.BoolOr "hide-ip" false }}
     {{ $collapsible := .Options.BoolOr "collapsible" false }}
     {{ $items := .JSON.Array "items" }}
+    {{ if eq (len $items) 0 }}
+      <div style="font-size: 1.15em;">
+        No systems found.
+      </div>
+    {{ end }}
     {{ range $items }}
       {{ $info := .Get "info" }}
       {{ $name := .String "name" }}

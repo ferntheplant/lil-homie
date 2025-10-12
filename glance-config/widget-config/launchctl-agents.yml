@@ -1,5 +1,5 @@
 - type: custom-api
-  title: Launchctl Agents
+  title: Launchctl
   url: http://host.docker.internal:8765/status
   cache: 30s
   template: |

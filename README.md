@@ -30,13 +30,21 @@ Using a classic SSH pub/priv key setup to SSH into the box. The cloudflare tunne
 
 Caddy is a docker container reverse proxy. Containers I want to expose to the broader internet are on the docker compose `proxy_network` network. Apps are served under base paths like `/logs` so in the Caddyfile I either use `handle_path` to make it strip the base path when proxying or `handle` to get it to forward tha path for apps that I could easily configure to have a base path (I forget which is which, ask Claude).
 
+Since I want Karakeep accessible from apps and extensions it uses a different Caddy network that routes to a different Cloudflare tunnel with separate access control settings.
+
 ## Syncthing
 
 I just use Syncthing to keep a handful of folders in sync across my devices.
 
-## Restic
+## Backrest
+
+I use [Backrest](https://github.com/garethgeorge/backrest) to get a ncie UI for setting up backups of my important folders. The backups are encrypted and stored in a Cloudflare R2 bucket.
+
+## Karakeep
 
 TODO
+
+### Ollama
 
 ## Beeper
 
@@ -54,6 +62,10 @@ To monitor the status of the iMessage bridge in my server dashboard I set up a l
 
 Glance is the server dashboard. It shows me a quick status of everything running on the box along with some extra goodies. Complex widgets have their own config file in `glance-config/widget-config`. To get the Glance server to use my desired timezone I had to extend the default docker image with `glance.Dockerfile`. Build it with the tag `fjorn-glance:1.0.0` before running `docker compose up -d`.
 
+### [Karakeep](https://github.com/glanceapp/community-widgets/blob/main/widgets/karakeep-dashboard/README.md)
+
+No changes from the default settings.
+
 ### [Beszel](https://github.com/glanceapp/community-widgets/blob/main/widgets/beszel-metrics/README.md)
 
 Beszel provides monitoring over time of all the containers' system usage. Beszel is proxied by Caddy behind `/beszel` so I had to do some stuff with the `APP_URL` env variable and `handle_path`. Ask Claude lol. The widget is not modified from the community base.
@@ -61,6 +73,10 @@ Beszel provides monitoring over time of all the containers' system usage. Beszel
 ### [Syncthing](https://github.com/glanceapp/community-widgets/blob/main/widgets/syncthing/README.md)
 
 The Syncthing glance widget is mostly unchanged - just swapped hard coded values for env variables.
+
+### [Backrest](https://github.com/not-first/restic-glance-extension)
+
+For a remote repo you don't need to mount any volumes - just set the env variables. If there are no backups then you'll get weird error messages in the widget so just ensure at least one snapshot exists.
 
 ### `launchctl` agents
 

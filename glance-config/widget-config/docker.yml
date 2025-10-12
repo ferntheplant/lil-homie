@@ -1,0 +1,40 @@
+- type: docker-containers
+  title: Docker
+  hide-by-default: false
+  containers:
+    caddy:
+      hide: true
+      icon: sh:caddy
+    beeper-signal:
+      icon: sh:signal
+    beeper-discord:
+      icon: sh:discord
+    beeper-facebook:
+      icon: sh:facebook-messenger
+    dozzle:
+      icon: sh:dozzle
+    beszel:
+      icon: sh:beszel
+    beszel-agent:
+      icon: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFjdGl2aXR5LWljb24gbHVjaWRlLWFjdGl2aXR5Ij48cGF0aCBkPSJNMjIgMTJoLTIuNDhhMiAyIDAgMCAwLTEuOTMgMS40NmwtMi4zNSA4LjM2YS4yNS4yNSAwIDAgMS0uNDggMEw5LjI0IDIuMThhLjI1LjI1IDAgMCAwLS40OCAwbC0yLjM1IDguMzZBMiAyIDAgMCAxIDQuNDkgMTJIMiIvPjwvc3ZnPg==
+    glances-ical:
+      name: glance-gcal
+      icon: sh:google-calendar
+    speedtest-tracker:
+      icon: sh:speedtest-tracker
+    syncthing:
+      icon: sh:syncthing
+    backrest:
+      icon: sh:backrest
+    karakeep-web:
+      name: karakeep
+      icon: sh:karakeep
+    karakeep-meilisearch:
+      icon: sh:meilisearch
+    karakeep-chrome:
+      icon: sh:google-chrome
+    restic-glance-extension:
+      name: glance-restic
+      icon: https://cdn.jsdelivr.net/gh/selfhst/icons/webp/restic.webp
+    glance:
+      hide: true

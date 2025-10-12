@@ -1,0 +1,19 @@
+- type: bookmarks
+  title: Quick Links
+  groups:
+    - links:
+      - title: karakeep
+        url: https://keep.fjorn.dev
+        icon: sh:karakeep
+      - title: syncthing
+        url: https://lil-homie.fjorn.dev/syncthing
+        icon: sh:syncthing
+      - title: backrest
+        url: https://lil-homie.fjorn.dev/backrest
+        icon: sh:backrest
+      - title: logs
+        url: https://lil-homie.fjorn.dev/logs
+        icon: sh:dozzle
+      - title: metrics
+        url: https://lil-homie.fjorn.dev/beszel
+        icon: sh:beszel

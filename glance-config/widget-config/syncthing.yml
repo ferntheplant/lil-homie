@@ -40,13 +40,13 @@
               {{ $comp := $r.JSON.Float "completion" }}
               <li>
                 <span class="{{ if eq $comp 100.0 }}text-success{{ else if gt $comp 0.0 }}text-info{{ else }}text-danger{{ end }}">
-                  {{ if eq $comp 100.0 }}✔️
+                  {{ if eq $comp 100.0 }}✅
                   {{ else if gt $comp 0.0 }}🔄
                   {{ else }}⚠️
                   {{ end }}
                   {{ $name }} –
                   {{ if eq $comp 100.0 }}
-                    In Sync (100 %)
+                    In Sync
                   {{ else if gt $comp 0.0 }}
                     Syncing ({{ printf "%.1f" $comp }} %)
                   {{ else }}

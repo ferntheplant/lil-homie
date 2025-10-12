@@ -27,24 +27,13 @@ pages:
     # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
     # hide-desktop-navigation: true
     columns:
-      - size: small
+      - size: full
         widgets:
-          - type: bookmarks
-            groups:
-              - links:
-                - title: syncthing
-                  url: https://lil-homie.fjorn.dev/syncthing
-                  icon: sh:syncthing
-                - title: logs
-                  url: https://lil-homie.fjorn.dev/logs
-                  icon: sh:dozzle
-                - title: metrics
-                  url: https://lil-homie.fjorn.dev/beszel
-                  icon: sh:beszel
+          - $include: widget-config/gcal.yml
 
           - $include: widget-config/weather.yml
 
-          - $include: widget-config/aqi.yml
+          - $include: widget-config/spotify.yml
 
           - type: custom-api
             height: 300px
@@ -56,51 +45,32 @@ pages:
 
       - size: full
         widgets:
-          - type: to-do
+          - $include: widget-config/quick-links.yml
 
-          - $include: widget-config/gcal.yml
+          - $include: widget-config/karakeep.yml
 
-          - type: docker-containers
-            title: Docker
-            hide-by-default: false
-            containers:
-              caddy:
-                icon: sh:caddy
-              beeper-signal:
-                icon: sh:signal
-              beeper-discord:
-                icon: sh:discord
-              beeper-facebook:
-                icon: sh:facebook-messenger
-              dozzle:
-                icon: sh:dozzle
-              beszel:
-                icon: sh:beszel
-              glances-ical:
-                name: gcal-api
-                icon: sh:google-calendar
-              speedtest-tracker:
-                icon: sh:speedtest-tracker
-              syncthing:
-                icon: sh:syncthing
-              glance:
-                hide: true
-
-          - $include: widget-config/spotify.yml
+          - type: group
+            title: Availability
+            widgets:
+              - $include: widget-config/docker.yml
+              - $include: widget-config/launchctl-agents.yml
+              - type: monitor
+                cache: 1m
+                title: Websites
+                sites:
+                  - title: fjorn.dev
+                    url: https://fjorn.dev
+                    icon: https://fjorn.dev/favicon.svg
 
       - size: small
         widgets:
           - $include: widget-config/syncthing.yml
 
-          - $include: widget-config/launchctl-agents.yml
-
-          - type: monitor
-            cache: 1m
-            title: Site Monitor
-            sites:
-              - title: fjorn.dev
-                url: https://fjorn.dev
-                icon: https://fjorn.dev/favicon.svg
+          - type: extension
+            title: Backups
+            url: http://restic-glance-extension:8675/backups
+            cache: 1s
+            allow-potentially-dangerous-html: true
 
           - $include: widget-config/cloudflare.yml
 

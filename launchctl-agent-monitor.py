@@ -17,6 +17,10 @@ SERVICES = [
         "label": "dev.fjorn.bbctl-imessage",  # Update this to your actual service name
         "display_name": "iMessage Bridge",
     },
+    {
+        "label": "dev.fjorn.ollama",
+        "display_name": "Ollama",
+    }
     # Add more services here as needed
     # {
     #     "label": "com.example.another-service",
