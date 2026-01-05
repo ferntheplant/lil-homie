@@ -1,0 +1,139 @@
+services:
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    restart: unless-stopped
+    environment:
+      - DOZZLE_BASE=/logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8082:8080
+    networks:
+      - caddy_network
+
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    environment:
+      - APP_URL=https://lil-homie.fjorn.dev/beszel
+    ports:
+      - 8090:8090
+    volumes:
+      - ${DATA_PATH}/beszel_data:/beszel_data
+      - ${DATA_PATH}/beszel_socket:/beszel_socket
+    networks:
+      - caddy_network
+
+  glance:
+    container_name: glance
+    image: fjorn-glance:1.0.0
+    restart: unless-stopped
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    volumes:
+      - ../../glance-config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8088:8080
+    networks:
+      - caddy_network
+
+  speedtest-tracker:
+    image: lscr.io/linuxserver/speedtest-tracker:latest
+    restart: unless-stopped
+    container_name: speedtest-tracker
+    ports:
+      - 8081:80
+      - 8443:443
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - DB_CONNECTION=sqlite
+      - SPEEDTEST_SCHEDULE="6 */2 * * *"
+    volumes:
+      - ${DATA_PATH}/speedtest-tracker:/config
+    networks:
+      - caddy_network
+
+  glances-ical:
+    container_name: glances-ical
+    image: ghcr.io/awildleon/glance-ical-events:latest
+    restart: unless-stopped
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    networks:
+      - caddy_network
+
+  syncthing:
+    image: syncthing/syncthing
+    container_name: syncthing
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ${DATA_PATH}/syncthing:/var/syncthing
+    networks:
+      - caddy_network
+    ports:
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 8384:8384
+
+  backrest:
+    image: garethgeorge/backrest:latest
+    container_name: backrest
+    hostname: backrest
+    volumes:
+      - ${DATA_PATH}/backrest/data:/data
+      - ${DATA_PATH}/backrest/config:/config
+      - ${DATA_PATH}/backrest/cache:/cache
+      - ${DATA_PATH}:/userdata  # backup the data folder
+    environment:
+      - BACKREST_DATA=/data
+      - BACKREST_CONFIG=/config/config.json
+      - XDG_CACHE_HOME=/cache
+      - TMPDIR=/tmp
+      - TZ=America/New_York
+    ports:
+      - "9898:9898"
+    restart: unless-stopped
+    networks:
+      - caddy_network
+
+  restic-glance-extension:
+    container_name: restic-glance-extension
+    image: ghcr.io/not-first/restic-glance-extension
+    ports:
+      - '8675:8675'
+    restart: unless-stopped
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    networks:
+      - caddy_network
+
+  uptime-kuma:
+    container_name: uptime-kuma
+    image: louislam/uptime-kuma:2
+    restart: unless-stopped
+    volumes:
+      - ${DATA_PATH}/uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 3001:3001
+    networks:
+      - caddy_network
+
+networks:
+  caddy_network:
+    name: caddy_network
+    external: true
+

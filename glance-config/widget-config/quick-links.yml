@@ -11,6 +11,9 @@
       - title: backrest
         url: https://lil-homie.fjorn.dev/backrest
         icon: sh:backrest
+      - title: uptime
+        url: https://status.fjorn.dev
+        icon: sh:uptime-kuma
       - title: logs
         url: https://lil-homie.fjorn.dev/logs
         icon: sh:dozzle

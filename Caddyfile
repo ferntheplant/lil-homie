@@ -2,6 +2,10 @@
   reverse_proxy karakeep-web:3000
 }
 
+:3001 {
+  reverse_proxy uptime-kuma:3001
+}
+
 :80 {
   handle /logs* {
     reverse_proxy dozzle:8080

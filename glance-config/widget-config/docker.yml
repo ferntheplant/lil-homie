@@ -15,8 +15,6 @@
       icon: sh:dozzle
     beszel:
       icon: sh:beszel
-    beszel-agent:
-      icon: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFjdGl2aXR5LWljb24gbHVjaWRlLWFjdGl2aXR5Ij48cGF0aCBkPSJNMjIgMTJoLTIuNDhhMiAyIDAgMCAwLTEuOTMgMS40NmwtMi4zNSA4LjM2YS4yNS4yNSAwIDAgMS0uNDggMEw5LjI0IDIuMThhLjI1LjI1IDAgMCAwLS40OCAwbC0yLjM1IDguMzZBMiAyIDAgMCAxIDQuNDkgMTJIMiIvPjwvc3ZnPg==
     glances-ical:
       name: glance-gcal
       icon: sh:google-calendar
@@ -36,5 +34,8 @@
     restic-glance-extension:
       name: glance-restic
       icon: https://cdn.jsdelivr.net/gh/selfhst/icons/webp/restic.webp
+    uptime-kuma:
+      name: uptime-kuma
+      icon: sh:uptime-kuma
     glance:
       hide: true

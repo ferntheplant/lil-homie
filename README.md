@@ -2,6 +2,12 @@
 
 A mac mini home server sitting in my closet.
 
+## Running it
+
+### Environment Variables
+
+Each stack gets its own `.env` file and examples are all in the single `example.env`.
+
 ## General
 
 - everything is on docker compose
@@ -12,7 +18,7 @@ A mac mini home server sitting in my closet.
 
 TODO
 
-I know I did somethign for setting it up so I could unlock it after a restart via ssh. I forgot everything else I did. I am running macOS 26.
+I know I did something for setting it up so I could unlock it after a restart via ssh. I forgot everything else I did. I am running macOS 26.
 
 ## Cloudflare
 
@@ -46,6 +52,14 @@ TODO
 
 ### Ollama
 
+## Uptime Kuma
+
+They specifically don't support using a sub-route so I had to set up another top-level subdomain on the cloudflare tunnel. From there the Caddy config looks identical to Karakeep's.
+
+## SignaturePDF
+
+TODO (I built the image from source)
+
 ## Beeper
 
 Beeper provides a unified messaging experience. The beeper apps aren't that good but I don't want to configure Matrix from scratch so they'll have to suffice. Their docs are pretty good.
@@ -66,9 +80,15 @@ Glance is the server dashboard. It shows me a quick status of everything running
 
 No changes from the default settings.
 
+### [Uptime Kuma](https://github.com/glanceapp/community-widgets/blob/main/widgets/uptime-kuma/README.md)
+
+No changes
+
 ### [Beszel](https://github.com/glanceapp/community-widgets/blob/main/widgets/beszel-metrics/README.md)
 
 Beszel provides monitoring over time of all the containers' system usage. Beszel is proxied by Caddy behind `/beszel` so I had to do some stuff with the `APP_URL` env variable and `handle_path`. Ask Claude lol. The widget is not modified from the community base.
+
+TODO: find a way to notify when the API token is expired
 
 ### [Syncthing](https://github.com/glanceapp/community-widgets/blob/main/widgets/syncthing/README.md)
 

@@ -20,6 +20,10 @@ SERVICES = [
     {
         "label": "dev.fjorn.ollama",
         "display_name": "Ollama",
+    },
+    {
+        "label": "homebrew.mxcl.beszel-agent",
+        "display_name": "Beszel Agent",
     }
     # Add more services here as needed
     # {

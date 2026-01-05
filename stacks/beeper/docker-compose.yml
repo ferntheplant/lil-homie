@@ -1,0 +1,37 @@
+services:
+  discord:
+    image: ghcr.io/beeper/bridge-manager
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    restart: unless-stopped
+    container_name: beeper-discord
+    volumes:
+      - ${DATA_PATH}/beeper-discord:/data
+    environment:
+      BRIDGE_NAME: sh-discord
+
+  signal:
+    image: ghcr.io/beeper/bridge-manager
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    restart: unless-stopped
+    container_name: beeper-signal
+    volumes:
+      - ${DATA_PATH}/beeper-signal:/data
+    environment:
+      BRIDGE_NAME: sh-signal
+
+  facebook:
+    image: ghcr.io/beeper/bridge-manager
+    env_file:
+      - ../../.env.shared
+      - ./.env
+    restart: unless-stopped
+    container_name: beeper-facebook
+    volumes:
+      - ${DATA_PATH}/beeper-facebook:/data
+    environment:
+      BRIDGE_NAME: sh-meta
+

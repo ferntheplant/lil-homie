@@ -52,6 +52,7 @@ pages:
           - type: group
             title: Availability
             widgets:
+              - $include: widget-config/uptime-kuma.yml
               - $include: widget-config/docker.yml
               - $include: widget-config/launchctl-agents.yml
               - type: monitor

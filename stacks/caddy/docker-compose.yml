@@ -1,0 +1,19 @@
+services:
+  caddy:
+    container_name: caddy
+    restart: unless-stopped
+    image: caddy:latest
+    ports:
+      - "3003:3003"
+      - "8080:80"
+    volumes:
+      - ../../Caddyfile:/etc/caddy/Caddyfile
+      - ${DATA_PATH}/caddy_data:/data
+      - ${DATA_PATH}/caddy_config:/config
+    networks:
+      - caddy_network
+
+networks:
+  caddy_network:
+    name: caddy_network
+
