@@ -14,6 +14,53 @@ Each stack gets its own `.env` file and examples are all in the single `example.
 - docker running via orbstack
 - all data for all services saved in `$DATA_PATH`
 - each stack gets its own `stacks/<stack>/.env` plus shared `/.env.shared`
+- stacks are independent compose projects, all bridged by the shared `caddy_network`
+
+## Stacks + Manage Script
+
+Stacks live under `stacks/<name>`, each with its own `docker-compose.yml` and optional `.env`.
+Common env is in `.env.shared`. All stacks are started/stopped via the single script:
+
+```bash
+./stacks/manage.sh start
+./stacks/manage.sh stop
+./stacks/manage.sh restart
+./stacks/manage.sh status
+./stacks/manage.sh logs --follow
+```
+
+Target a single stack by name:
+
+```bash
+./stacks/manage.sh start yams
+./stacks/manage.sh restart homie
+```
+
+Current stacks:
+
+- `caddy`: meta stack (reverse proxy network + Portainer + Watchtower)
+- `homie`: glance + monitors/utilities
+- `yams`: media server (arr stack)
+- `karakeep`: bookmarker + search
+- `beeper`: bridge-manager services
+
+### Meta Stack (caddy)
+
+The `caddy` stack owns the shared reverse-proxy network and global tooling:
+
+- Caddy reverse proxy
+- Portainer (UI for docker management)
+- Watchtower (auto-updates for labeled containers)
+
+Watchtower runs in label-only mode. Any container with
+`com.centurylinklabs.watchtower.enable=true` will auto-update. All services in this repo
+are labeled.
+
+Portainer is reachable at:
+
+- `https://lil-homie.fjorn.dev/portainer`
+
+If admin setup fails behind the proxy, use `http://localhost:9000` once to create the admin user.
 
 ## YAMS (ARR Stack)
 
@@ -24,10 +71,9 @@ The media server stack lives in `stacks/yams` and is a slimmed down YAMS setup:
 - Sonarr / Radarr / Lidarr (media automation)
 - Bazarr (subtitles)
 - Prowlarr (indexers)
-- Portainer (container UI)
-- Watchtower (auto-updates)
 
 Notes:
+
 - Media is stored at `/Users/fjorn/lil-homie/media`
 - YAMS config lives under `/Users/fjorn/lil-homie/data/yams/config`
 - The stack uses Caddy for subpath routing (e.g. `/sonarr`, `/radarr`, etc.)
@@ -58,14 +104,6 @@ qBittorrent does not expose a Base URL setting. Access it via:
 
 - `https://lil-homie.fjorn.dev/qbittorrent`
 
-### Portainer
-
-Portainer is available at:
-
-- `https://lil-homie.fjorn.dev/portainer`
-
-If admin setup fails behind the proxy, use `http://localhost:9000` once to create the admin user.
-
 ## Media Workflow (TV Show Idea → Jellyfin)
 
 This is the end-to-end flow for adding a show and getting it into Jellyfin.
@@ -93,6 +131,7 @@ This is the end-to-end flow for adding a show and getting it into Jellyfin.
    - Run a library scan in Jellyfin if it doesn’t appear immediately
 
 Notes:
+
 - If Sonarr complains about missing `/downloads`, align qBittorrent to `/data/downloads`.
 - qBittorrent downloads are visible to Sonarr via the shared `/data` mount.
 
@@ -126,6 +165,7 @@ To finish the VPN setup:
    - `./stacks/manage.sh restart yams`
 
 Optional:
+
 - Expose the forwarded port on the host if you are not routing through Gluetun
   and are using direct ISP connectivity.
 
@@ -154,7 +194,6 @@ WIREGUARD_ADDRESSES=...
    - `network_mode: "service:gluetun"`
 
 6. Proton’s forwarded port can change when you reconnect. You must update qBittorrent’s listening port to match the current forwarded port each session. citeturn0search1
-
 
 ## Recovery
 
@@ -200,15 +239,13 @@ docker compose -f stacks/homie/docker-compose.yml --env-file /Users/fjorn/lil-ho
 
 ## MacOS Settings
 
-TODO
-
-I know I did something for setting it up so I could unlock it after a restart via ssh. I forgot everything else I did. I am running macOS 26.
+TODO I know I did something for setting it up so I could unlock it after a restart via ssh. I forgot everything else I did. I am running macOS 26.
 
 ## Cloudflare
 
 I'm using Cloudflare Tunnels to connect the server to the internet at large. I suffered through the cloudflare dashboard because I did not feel like learning their config schema.
 
-TODO: setup IaC for cloudflare config
+TODO: migrate to tailscale
 
 There is a single tunnel routing to this machine. The cloudflare tunnel is running via `cloudflared` as a `launchctl` daemon. On it are 2 published applications, one for Caddy and one for SSH, published on subdomains. These applications have corresponding "Applications" in the Zero Trust Access section pointing to the subdomains from the Tunnel config. The applications have access policies set so only my cloudflare account can access the tunnels.
 
@@ -218,7 +255,7 @@ Using a classic SSH pub/priv key setup to SSH into the box. The cloudflare tunne
 
 ## Caddy
 
-Caddy is a docker container reverse proxy. Containers I want to expose to the broader internet are on the docker compose `proxy_network` network. Apps are served under base paths like `/logs` so in the Caddyfile I either use `handle_path` to make it strip the base path when proxying or `handle` to get it to forward tha path for apps that I could easily configure to have a base path (I forget which is which, ask Claude).
+Caddy is a docker container reverse proxy. Containers I want to expose to the broader internet are on the docker compose `caddy_network` network. Apps are served under base paths like `/logs` so in the Caddyfile I either use `handle_path` to make it strip the base path when proxying or `handle` to get it to forward the path for apps that I could easily configure to have a base path (I forget which is which, ask Claude).
 
 Since I want Karakeep accessible from apps and extensions it uses a different Caddy network that routes to a different Cloudflare tunnel with separate access control settings.
 
@@ -232,17 +269,13 @@ I use [Backrest](https://github.com/garethgeorge/backrest) to get a ncie UI for 
 
 ## Karakeep
 
-TODO
+TODO: describe this setup
 
 ### Ollama
 
 ## Uptime Kuma
 
 They specifically don't support using a sub-route so I had to set up another top-level subdomain on the cloudflare tunnel. From there the Caddy config looks identical to Karakeep's.
-
-## SignaturePDF
-
-TODO (I built the image from source)
 
 ## Beeper
 
@@ -259,6 +292,12 @@ To monitor the status of the iMessage bridge in my server dashboard I set up a l
 ## Glance
 
 Glance is the server dashboard. It shows me a quick status of everything running on the box along with some extra goodies. Complex widgets have their own config file in `glance-config/widget-config`. To get the Glance server to use my desired timezone I had to extend the default docker image with `glance.Dockerfile`. Build it with the tag `fjorn-glance:1.0.0` before running `docker compose up -d`.
+
+Glance lives in the `homie` stack. The page config lives in `glance-config/` and is mounted into the container. Custom behavior in this repo:
+
+- `glance.Dockerfile` pins timezone handling in the image.
+- `glance-config/widget-config` contains complex widgets, including the `launchctl` agent monitor.
+- Some widgets require app-side base paths (see notes below), and some services need custom `APP_URL` settings.
 
 ### [Karakeep](https://github.com/glanceapp/community-widgets/blob/main/widgets/karakeep-dashboard/README.md)
 
@@ -308,5 +347,4 @@ Just followed basic instructions for the widget.
 
 ## TODO
 
-- migrate other stacks into Portainer-managed projects
-- enable Watchtower updates for non-YAMS stacks
+- keep portainer + watchtower in the caddy "meta" stack

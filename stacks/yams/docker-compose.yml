@@ -3,6 +3,8 @@ services:
   jellyfin:
     image: lscr.io/linuxserver/jellyfin
     container_name: jellyfin
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -25,6 +27,8 @@ services:
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:4.6.3
     container_name: qbittorrent
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -49,6 +53,8 @@ services:
   sonarr:
     image: lscr.io/linuxserver/sonarr
     container_name: sonarr
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -72,6 +78,8 @@ services:
   radarr:
     image: lscr.io/linuxserver/radarr
     container_name: radarr
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -95,6 +103,8 @@ services:
   lidarr:
     image: lscr.io/linuxserver/lidarr
     container_name: lidarr
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -118,6 +128,8 @@ services:
   bazarr:
     image: lscr.io/linuxserver/bazarr
     container_name: bazarr
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -141,6 +153,8 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr
     container_name: prowlarr
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -162,6 +176,8 @@ services:
   gluetun:
     image: qmcgaw/gluetun:v3
     container_name: gluetun
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -194,6 +210,8 @@ services:
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -204,41 +222,6 @@ services:
     networks:
       yams_network:
         ipv4_address: 172.60.0.21
-
-  # Portainer helps debugging and monitors the containers
-  portainer:
-    image: portainer/portainer-ce
-    container_name: portainer
-    env_file:
-      - ../../.env.shared
-      - ./.env
-    ports:
-      - 9000:9000
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${INSTALL_DIRECTORY}/config/portainer:/data
-    restart: unless-stopped
-    networks:
-      yams_network:
-        ipv4_address: 172.60.0.19
-      caddy_network:
-
-  # Watchtower is going to keep our instances updated
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    env_file:
-      - ../../.env.shared
-      - ./.env
-    environment:
-      - WATCHTOWER_CLEANUP=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
-    networks:
-      yams_network:
-        ipv4_address: 172.60.0.20
 
 networks:
   yams_network:

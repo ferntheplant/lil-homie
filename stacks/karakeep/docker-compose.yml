@@ -3,6 +3,8 @@ services:
     container_name: karakeep-web
     image: ghcr.io/karakeep-app/karakeep:${KARAKEEP_VERSION:-release}
     restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     volumes:
       # By default, the data is stored in a docker volume called "data".
       # If you want to mount a custom directory, change the volume mapping to:
@@ -28,6 +30,8 @@ services:
     container_name: karakeep-chrome
     image: gcr.io/zenika-hub/alpine-chrome:124
     restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     command:
       - --no-sandbox
       - --disable-gpu
@@ -42,6 +46,8 @@ services:
     container_name: karakeep-meilisearch
     image: getmeili/meilisearch:v1.13.3
     restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
     env_file:
       - ../../.env.shared
       - ./.env
@@ -56,4 +62,3 @@ networks:
   caddy_network:
     name: caddy_network
     external: true
-
