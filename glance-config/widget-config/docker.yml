@@ -39,3 +39,21 @@
       icon: sh:uptime-kuma
     glance:
       hide: true
+    jellyfin:
+      icon: sh:jellyfin
+    sonarr:
+      icon: sh:sonarr
+    radarr:
+      icon: sh:radarr
+    lidarr:
+      icon: sh:lidarr
+    bazarr:
+      icon: sh:bazarr
+    prowlarr:
+      icon: sh:prowlarr
+    qbittorrent:
+      icon: sh:qbittorrent
+    portainer:
+      icon: sh:portainer
+    watchtower:
+      icon: sh:watchtower

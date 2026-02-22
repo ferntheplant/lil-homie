@@ -20,3 +20,27 @@
       - title: metrics
         url: https://lil-homie.fjorn.dev/beszel
         icon: sh:beszel
+      - title: jellyfin
+        url: https://lil-homie.fjorn.dev/jellyfin
+        icon: sh:jellyfin
+      - title: sonarr
+        url: https://lil-homie.fjorn.dev/sonarr
+        icon: sh:sonarr
+      - title: radarr
+        url: https://lil-homie.fjorn.dev/radarr
+        icon: sh:radarr
+      - title: lidarr
+        url: https://lil-homie.fjorn.dev/lidarr
+        icon: sh:lidarr
+      - title: bazarr
+        url: https://lil-homie.fjorn.dev/bazarr
+        icon: sh:bazarr
+      - title: prowlarr
+        url: https://lil-homie.fjorn.dev/prowlarr
+        icon: sh:prowlarr
+      - title: qbittorrent
+        url: https://lil-homie.fjorn.dev/qbittorrent
+        icon: sh:qbittorrent
+      - title: portainer
+        url: https://lil-homie.fjorn.dev/portainer
+        icon: sh:portainer

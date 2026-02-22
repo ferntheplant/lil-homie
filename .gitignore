@@ -3,3 +3,4 @@ data/
 foo/
 .DS_store
 **/*.env
+media/

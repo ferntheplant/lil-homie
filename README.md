@@ -13,6 +13,190 @@ Each stack gets its own `.env` file and examples are all in the single `example.
 - everything is on docker compose
 - docker running via orbstack
 - all data for all services saved in `$DATA_PATH`
+- each stack gets its own `stacks/<stack>/.env` plus shared `/.env.shared`
+
+## YAMS (ARR Stack)
+
+The media server stack lives in `stacks/yams` and is a slimmed down YAMS setup:
+
+- Jellyfin (media server)
+- qBittorrent (torrent client)
+- Sonarr / Radarr / Lidarr (media automation)
+- Bazarr (subtitles)
+- Prowlarr (indexers)
+- Portainer (container UI)
+- Watchtower (auto-updates)
+
+Notes:
+- Media is stored at `/Users/fjorn/lil-homie/media`
+- YAMS config lives under `/Users/fjorn/lil-homie/data/yams/config`
+- The stack uses Caddy for subpath routing (e.g. `/sonarr`, `/radarr`, etc.)
+- qBittorrent does not support a Base URL; Caddy strips the `/qbittorrent` prefix
+
+### Running YAMS
+
+```bash
+./stacks/manage.sh start yams
+./stacks/manage.sh stop yams
+./stacks/manage.sh restart yams
+```
+
+### Base URLs (ARR Apps)
+
+When accessed through Caddy subpaths, each app must be configured with a Base URL:
+
+- Sonarr: `/sonarr`
+- Radarr: `/radarr`
+- Lidarr: `/lidarr`
+- Bazarr: `/bazarr`
+- Prowlarr: `/prowlarr`
+- Jellyfin: `/jellyfin` (optional; can also be left blank and accessed on `:8096`)
+
+### qBittorrent
+
+qBittorrent does not expose a Base URL setting. Access it via:
+
+- `https://lil-homie.fjorn.dev/qbittorrent`
+
+### Portainer
+
+Portainer is available at:
+
+- `https://lil-homie.fjorn.dev/portainer`
+
+If admin setup fails behind the proxy, use `http://localhost:9000` once to create the admin user.
+
+## Media Workflow (TV Show Idea → Jellyfin)
+
+This is the end-to-end flow for adding a show and getting it into Jellyfin.
+
+1. **Indexer**
+   - Add or confirm your indexer in Prowlarr.
+   - In Prowlarr: `Settings → Apps → + → Sonarr` and connect it using Sonarr’s API key.
+
+2. **Download Client**
+   - In Sonarr: `Settings → Download Clients → + → qBittorrent`
+   - Use host `qbittorrent` and port `8085` (internal Docker network).
+   - Ensure qBittorrent’s default save path is `/data/downloads`.
+
+3. **Add the Show**
+   - Sonarr → `Series → Add New`
+   - Choose a path under `/data/tvshows/<Show Name>`
+   - Pick your quality profile and language
+   - Add the series
+
+4. **Search**
+   - In the series page, run “Search” to immediately grab monitored episodes.
+
+5. **Jellyfin**
+   - Jellyfin should have a TV library pointed at `/data/tvshows`
+   - Run a library scan in Jellyfin if it doesn’t appear immediately
+
+Notes:
+- If Sonarr complains about missing `/downloads`, align qBittorrent to `/data/downloads`.
+- qBittorrent downloads are visible to Sonarr via the shared `/data` mount.
+
+## VPN + Port Forwarding (Remaining Steps)
+
+If you want reliable torrent connectivity, you need a VPN provider that supports port forwarding.
+Mullvad no longer supports port forwarding, so avoid it for this use-case.
+
+To finish the VPN setup:
+
+1. **Choose a provider with port forwarding**
+   - Examples: Proton VPN (paid), AirVPN, OVPN
+
+2. **Get WireGuard credentials**
+   - Download the WireGuard config from the provider
+   - Extract: private key, address, and server endpoint
+
+3. **Update `stacks/yams/.env`**
+   - Set `VPN_SERVICE_PROVIDER`, `VPN_TYPE=wireguard`,
+     `WIREGUARD_PRIVATE_KEY`, `WIREGUARD_ADDRESSES`
+
+4. **Route qBittorrent through Gluetun**
+   - In `stacks/yams/docker-compose.yml`, enable:
+     `network_mode: "service:gluetun"`
+
+5. **Port forward**
+   - Configure the forwarded port in your VPN provider dashboard
+   - Set the same port as qBittorrent’s listening port
+
+6. **Restart YAMS**
+   - `./stacks/manage.sh restart yams`
+
+Optional:
+- Expose the forwarded port on the host if you are not routing through Gluetun
+  and are using direct ISP connectivity.
+
+### Proton VPN (Exact Steps)
+
+Proton’s port forwarding works on **paid plans** and only on **P2P servers**. When generating a WireGuard config, you must enable **NAT-PMP (port forwarding)** and select a P2P server (double‑arrow icon). citeturn0search1turn0search2
+
+1. Go to `account.protonvpn.com` → `Downloads` → `WireGuard configuration`. citeturn0search0
+2. Create a config:
+   - Choose a **P2P server**
+   - Enable **NAT-PMP (port forwarding)**
+3. Download the `.conf` file and extract:
+   - **PrivateKey**
+   - **Address**
+   - **Endpoint** (server:port)
+4. Update `stacks/yams/.env`:
+
+```env
+VPN_SERVICE_PROVIDER=protonvpn
+VPN_TYPE=wireguard
+WIREGUARD_PRIVATE_KEY=...
+WIREGUARD_ADDRESSES=...
+```
+
+5. In `stacks/yams/docker-compose.yml`, route qBittorrent through Gluetun:
+   - `network_mode: "service:gluetun"`
+
+6. Proton’s forwarded port can change when you reconnect. You must update qBittorrent’s listening port to match the current forwarded port each session. citeturn0search1
+
+
+## Recovery
+
+Quick debug loop for broken containers:
+
+```bash
+./stacks/manage.sh status
+docker compose -f stacks/homie/docker-compose.yml --env-file /Users/fjorn/lil-homie/.env.shared ps
+docker compose -f stacks/homie/docker-compose.yml --env-file /Users/fjorn/lil-homie/.env.shared logs --tail=200 <service>
+```
+
+### Backrest oplog corruption
+
+If Backrest is crashing with an `oplog` migration error, it is safe to move the oplog sqlite file out of the way and restart:
+
+```bash
+mv $DATA_PATH/backrest/data/oplog.sqlite \
+  $DATA_PATH/backrest/data/oplog.sqlite.bak-YYYYMMDD-HHMMSS
+docker compose -f stacks/homie/docker-compose.yml --env-file /Users/fjorn/lil-homie/.env.shared up -d backrest
+```
+
+### Uptime Kuma sqlite corruption
+
+If Uptime Kuma restarts with `SQLITE_CORRUPT`, try sqlite recovery first:
+
+```bash
+TIMESTAMP=YYYYMMDD-HHMMSS
+mkdir -p $DATA_PATH/uptime-kuma/backup-$TIMESTAMP
+cp -a $DATA_PATH/uptime-kuma/kuma.db \
+  $DATA_PATH/uptime-kuma/kuma.db-wal \
+  $DATA_PATH/uptime-kuma/kuma.db-shm \
+  $DATA_PATH/uptime-kuma/backup-$TIMESTAMP/
+sqlite3 $DATA_PATH/uptime-kuma/kuma.db ".recover" | \
+  sqlite3 $DATA_PATH/uptime-kuma/kuma.db.recovered
+mv $DATA_PATH/uptime-kuma/kuma.db \
+  $DATA_PATH/uptime-kuma/kuma.db.bak-$TIMESTAMP
+mv $DATA_PATH/uptime-kuma/kuma.db.recovered \
+  $DATA_PATH/uptime-kuma/kuma.db
+rm -f $DATA_PATH/uptime-kuma/kuma.db-wal \
+  $DATA_PATH/uptime-kuma/kuma.db-shm
+docker compose -f stacks/homie/docker-compose.yml --env-file /Users/fjorn/lil-homie/.env.shared up -d uptime-kuma
+```
 
 ## MacOS Settings
 
@@ -122,3 +306,7 @@ Again just for the meme. Just followed default instructions for the widget.
 
 Just followed basic instructions for the widget.
 
+## TODO
+
+- migrate other stacks into Portainer-managed projects
+- enable Watchtower updates for non-YAMS stacks
