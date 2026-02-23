@@ -4,8 +4,8 @@ services:
     restart: unless-stopped
     image: caddy:latest
     ports:
-      - "3003:3003"
-      - "8080:80"
+      - "127.0.0.1:3003:3003"
+      - "127.0.0.1:8080:80"
     volumes:
       - ../../Caddyfile:/etc/caddy/Caddyfile
       - ${DATA_PATH}/caddy_data:/data

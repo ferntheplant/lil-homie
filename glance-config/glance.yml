@@ -73,8 +73,6 @@ pages:
             cache: 1s
             allow-potentially-dangerous-html: true
 
-          - $include: widget-config/cloudflare.yml
-
           - $include: widget-config/beszel.yml
 
           - $include: widget-config/speedtest.yml

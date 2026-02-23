@@ -7,6 +7,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STACKS=("caddy" "beeper" "homie" "karakeep" "yams")
+TAILSCALE_HOST="lil-homie.tail8cc0d3.ts.net"
+TAILSCALE_SERVE_PORTS=("8080" "3003" "3001")
 
 # Colors for output
 RED='\033[0;31m'
@@ -22,6 +24,84 @@ compose_cmd() {
         env_args+=(--env-file ".env")
     fi
     docker compose "${env_args[@]}" "$@"
+}
+
+tailscale_available() {
+    command -v tailscale >/dev/null 2>&1
+}
+
+run_with_timeout() {
+    local seconds=$1
+    shift
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$seconds" "$@" <<'PY'
+import subprocess
+import sys
+
+timeout = float(sys.argv[1])
+cmd = sys.argv[2:]
+p = subprocess.Popen(
+    cmd,
+    stdin=subprocess.DEVNULL,
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+try:
+    p.wait(timeout=timeout)
+except subprocess.TimeoutExpired:
+    p.terminate()
+    try:
+        p.wait(timeout=1)
+    except subprocess.TimeoutExpired:
+        p.kill()
+sys.exit(0)
+PY
+    else
+        "$@" </dev/null >/dev/null 2>&1 || true
+    fi
+}
+
+serve_on() {
+    local port=$1
+    if [[ "$port" == "8080" ]]; then
+        # Default HTTPS on :443 -> local 8080
+        run_with_timeout 3 tailscale serve --bg "${port}" </dev/null >/dev/null 2>&1 || true
+    else
+        # Explicit HTTPS port -> same local port
+        run_with_timeout 3 tailscale serve --bg --https "${port}" "${port}" </dev/null >/dev/null 2>&1 || true
+    fi
+}
+
+serve_off() {
+    local port=$1
+    if [[ "$port" == "8080" ]]; then
+        run_with_timeout 3 tailscale serve clear https:443 </dev/null >/dev/null 2>&1 || true
+    else
+        run_with_timeout 3 tailscale serve clear "https:${port}" </dev/null >/dev/null 2>&1 || true
+    fi
+}
+
+ensure_tailscale_serve() {
+    if ! tailscale_available; then
+        echo -e "${YELLOW}tailscale not found; skipping serve setup.${NC}"
+        return 0
+    fi
+    echo -e "${YELLOW}→ tailscale serve${NC}"
+    for port in "${TAILSCALE_SERVE_PORTS[@]}"; do
+        serve_on "${port}"
+    done
+    echo -e "${YELLOW}If Serve is not enabled for this tailnet, run: tailscale serve --bg 8080 (and 3003/3001)${NC}"
+    echo -e "${GREEN}tailscale serve configured for ${TAILSCALE_HOST}.${NC}"
+}
+
+disable_tailscale_serve() {
+    if ! tailscale_available; then
+        return 0
+    fi
+    echo -e "${YELLOW}→ tailscale serve off${NC}"
+    for port in "${TAILSCALE_SERVE_PORTS[@]}"; do
+        serve_off "${port}"
+    done
 }
 
 is_valid_stack() {
@@ -63,6 +143,9 @@ start_one() {
     echo -e "${YELLOW}→ ${stack}${NC}"
     cd "${SCRIPT_DIR}/${stack}"
     compose_cmd up -d
+    if [[ "$stack" == "caddy" || "$stack" == "homie" ]]; then
+        ensure_tailscale_serve
+    fi
     echo -e "${GREEN}${stack} started!${NC}"
 }
 
@@ -80,6 +163,7 @@ start_all() {
         cd "${SCRIPT_DIR}/${stack}"
         compose_cmd up -d
     done
+    ensure_tailscale_serve
     echo -e "${GREEN}All stacks started!${NC}"
 }
 
@@ -91,6 +175,13 @@ stop_one() {
     echo -e "${YELLOW}→ ${stack}${NC}"
     cd "${SCRIPT_DIR}/${stack}"
     compose_cmd down
+    if [[ "$stack" == "caddy" ]]; then
+        serve_off "8080"
+        serve_off "3003"
+    fi
+    if [[ "$stack" == "homie" ]]; then
+        serve_off "3001"
+    fi
     echo -e "${GREEN}${stack} stopped!${NC}"
 }
 
@@ -104,6 +195,7 @@ stop_all() {
         cd "${SCRIPT_DIR}/${stack}"
         compose_cmd down
     done
+    disable_tailscale_serve
     echo -e "${GREEN}All stacks stopped!${NC}"
 }
 
@@ -146,6 +238,16 @@ logs_all() {
     done
 }
 
+logs_one() {
+    local stack=$1
+    local follow=${2:-""}
+    require_stack "$stack"
+    echo -e "${GREEN}Showing logs for ${stack}${NC}"
+    echo -e "${YELLOW}Press Ctrl+C to exit${NC}\n"
+    cd "${SCRIPT_DIR}/${stack}"
+    compose_cmd logs $follow
+}
+
 # Main command handling
 case "${1:-}" in
     start)
@@ -173,7 +275,15 @@ case "${1:-}" in
         status_all
         ;;
     logs)
-        logs_all "${2:-}"
+        if [[ -n "${2:-}" ]]; then
+            if is_valid_stack "${2}"; then
+                logs_one "${2}" "${3:-}"
+            else
+                logs_all "${2:-}"
+            fi
+        else
+            logs_all "${2:-}"
+        fi
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|status|logs [--follow]} [stack]"

@@ -56,11 +56,15 @@ Watchtower runs in label-only mode. Any container with
 `com.centurylinklabs.watchtower.enable=true` will auto-update. All services in this repo
 are labeled.
 
+Local images (e.g., `glance` built from `glance.Dockerfile` as `fjorn-glance:1.0.0`) are
+not updated by Watchtower. Rebuild them manually when you want fresh upstream bits.
+
 Portainer is reachable at:
 
-- `https://lil-homie.fjorn.dev/portainer`
+- `https://lil-homie.tail8cc0d3.ts.net/portainer`
 
 If admin setup fails behind the proxy, use `http://localhost:9000` once to create the admin user.
+If Portainer shows `/timeout`, restart the `caddy` stack and complete the admin setup promptly.
 
 ## YAMS (ARR Stack)
 
@@ -102,7 +106,21 @@ When accessed through Caddy subpaths, each app must be configured with a Base UR
 
 qBittorrent does not expose a Base URL setting. Access it via:
 
-- `https://lil-homie.fjorn.dev/qbittorrent`
+- `https://lil-homie.tail8cc0d3.ts.net/qbittorrent`
+
+Note: qBittorrent runs behind Gluetun. Caddy proxies `/qbittorrent` to `gluetun:8085` (not `qbittorrent`).
+
+If the WebUI login loops when accessed via the reverse proxy, add these to
+`$DATA_PATH/yams/config/qbittorrent/qBittorrent/qBittorrent.conf` under `[Preferences]`
+and restart the `yams` stack:
+
+```ini
+WebUI\CSRFProtection=false
+WebUI\HostHeaderValidation=false
+WebUI\ReverseProxySupportEnabled=true
+WebUI\TrustedReverseProxies=172.60.0.0/24,192.168.97.0/24
+WebUI\RootFolder=
+```
 
 ## Media Workflow (TV Show Idea → Jellyfin)
 
@@ -241,27 +259,90 @@ docker compose -f stacks/homie/docker-compose.yml --env-file /Users/fjorn/lil-ho
 
 TODO I know I did something for setting it up so I could unlock it after a restart via ssh. I forgot everything else I did. I am running macOS 26.
 
-## Cloudflare
+## Tailscale
 
-I'm using Cloudflare Tunnels to connect the server to the internet at large. I suffered through the cloudflare dashboard because I did not feel like learning their config schema.
+All external access is via Tailscale. The host is `lil-homie.tail8cc0d3.ts.net`. Tailscale Serve publishes Caddy (and any dedicated listeners like Karakeep/Uptime Kuma) to the tailnet only.
 
-TODO: migrate to tailscale
+Serve entrypoints:
+- Caddy (main): `tailscale serve --bg 8080` → `https://lil-homie.tail8cc0d3.ts.net/`
+- Karakeep (dedicated): `tailscale serve --bg --https 3003 3003` → `https://lil-homie.tail8cc0d3.ts.net:3003/`
+- Uptime Kuma (dedicated): `tailscale serve --bg --https 3001 3001` → `https://lil-homie.tail8cc0d3.ts.net:3001/`
 
-There is a single tunnel routing to this machine. The cloudflare tunnel is running via `cloudflared` as a `launchctl` daemon. On it are 2 published applications, one for Caddy and one for SSH, published on subdomains. These applications have corresponding "Applications" in the Zero Trust Access section pointing to the subdomains from the Tunnel config. The applications have access policies set so only my cloudflare account can access the tunnels.
+`./stacks/manage.sh start` will configure Tailscale Serve for all three ports. `./stacks/manage.sh stop` will remove the Serve config.
+
+If `tailscale serve status` shows `No serve config`, run the three commands above once to initialize Serve for the tailnet (this triggers the one-time consent flow).
+If `tailscale serve status` only shows one port, reset and reapply:
+
+```bash
+tailscale serve reset
+./stacks/manage.sh start
+```
+
+If MagicDNS doesn’t resolve on a CLI-only client, add a resolver file:
+
+```bash
+sudo mkdir -p /etc/resolver
+echo "nameserver 100.100.100.100" | sudo tee /etc/resolver/tail8cc0d3.ts.net
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
+```
 
 ## SSH
 
-Using a classic SSH pub/priv key setup to SSH into the box. The cloudflare tunnel just points to `localhost:22`. I had to disable async shell rendering (atuin, zsh-autosuggestions, fzf-tab) to get the SSH experience to not suck ass.
+Using a classic SSH pub/priv key setup to SSH into the box over the tailnet. I had to disable async shell rendering (atuin, zsh-autosuggestions, fzf-tab) to get the SSH experience to not suck ass.
 
 ## Caddy
 
 Caddy is a docker container reverse proxy. Containers I want to expose to the broader internet are on the docker compose `caddy_network` network. Apps are served under base paths like `/logs` so in the Caddyfile I either use `handle_path` to make it strip the base path when proxying or `handle` to get it to forward the path for apps that I could easily configure to have a base path (I forget which is which, ask Claude).
 
-Since I want Karakeep accessible from apps and extensions it uses a different Caddy network that routes to a different Cloudflare tunnel with separate access control settings.
+Since I want Karakeep accessible from apps and extensions it uses a separate Caddy listener and is published over Tailscale Serve.
 
 ## Syncthing
 
 I just use Syncthing to keep a handful of folders in sync across my devices.
+
+### Tailnet-only setup
+
+Docker/Orbstack can't bind container ports directly to the Tailscale IP, so Syncthing's data port (`22000`) is restricted at the macOS firewall level and Syncthing is forced to use Tailscale addresses.
+
+1) Apply the pf rule (macOS firewall)
+
+```bash
+sudo /Users/fjorn/lil-homie/scripts/setup-pf-tailscale-syncthing.sh utun4
+```
+
+Find the correct interface with:
+
+```bash
+ifconfig | rg -n "utun|100\\." -C 2
+```
+
+2) Configure Syncthing listen addresses (each device listens on its own tailnet IP)
+
+Server (`lil-homie`):
+- `tcp://<server_tailnet_ip>:22000`
+- `quic://<server_tailnet_ip>:22000`
+
+Laptop:
+- `tcp://<laptop_tailnet_ip>:22000`
+- `quic://<laptop_tailnet_ip>:22000`
+
+3) Configure device addresses (each device points at the other's tailnet IP)
+
+Laptop → server:
+- `tcp://<server_tailnet_ip>:22000`
+
+Server → laptop:
+- `tcp://<laptop_tailnet_ip>:22000`
+
+Optional (strict tailnet-only):
+- Disable Global Discovery and Relays in `Settings → Connections`
+
+Restart Syncthing after changes:
+
+```bash
+./stacks/manage.sh restart homie
+```
 
 ## Backrest
 
@@ -269,13 +350,26 @@ I use [Backrest](https://github.com/garethgeorge/backrest) to get a ncie UI for 
 
 ## Karakeep
 
-TODO: describe this setup
+Served on a dedicated listener via Tailscale Serve for mobile/extension compatibility:
+
+- `https://lil-homie.tail8cc0d3.ts.net:3003/`
 
 ### Ollama
 
 ## Uptime Kuma
 
-They specifically don't support using a sub-route so I had to set up another top-level subdomain on the cloudflare tunnel. From there the Caddy config looks identical to Karakeep's.
+Uptime Kuma doesn’t support sub-routes. It runs on a dedicated listener and is published via Tailscale Serve:
+
+- `https://lil-homie.tail8cc0d3.ts.net:3001/`
+
+If it restarts with a migration lock error, clear the lock in `kuma.db`:
+
+```bash
+./stacks/manage.sh stop homie
+sqlite3 $DATA_PATH/uptime-kuma/kuma.db "DELETE FROM knex_migrations_lock;"
+sqlite3 $DATA_PATH/uptime-kuma/kuma.db "INSERT INTO knex_migrations_lock (is_locked) VALUES (0);"
+./stacks/manage.sh start homie
+```
 
 ## Beeper
 

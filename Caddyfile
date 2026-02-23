@@ -79,7 +79,10 @@
   redir @qbittorrent_root /qbittorrent/ 308
 
   handle_path /qbittorrent* {
-    reverse_proxy qbittorrent:8085
+    reverse_proxy gluetun:8085 {
+      header_up X-Forwarded-Proto https
+      header_up X-Forwarded-Host {host}
+    }
   }
 
   @portainer_root path /portainer

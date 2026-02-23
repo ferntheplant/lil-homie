@@ -17,7 +17,7 @@ services:
       - ${MEDIA_DIRECTORY}:/data
       - ${INSTALL_DIRECTORY}/config/${MEDIA_SERVICE}:/config
     ports: # plex
-      - 8096:8096 # plex
+      - 127.0.0.1:8096:8096 # plex
     restart: unless-stopped
     networks:
       - yams_network
@@ -41,12 +41,9 @@ services:
       - ${MEDIA_DIRECTORY}:/data
       - ${INSTALL_DIRECTORY}/config/qbittorrent:/config
     restart: unless-stopped
-    ports: # qbittorrent
-      - 8085:8085 # qbittorrent
-    #network_mode: "service:gluetun"
-    networks:
-      - yams_network
-      - caddy_network
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
 
   # Sonarr is used to query, add downloads to the download queue and index TV shows
   # https://sonarr.tv/
@@ -66,7 +63,7 @@ services:
       - ${MEDIA_DIRECTORY}:/data
       - ${INSTALL_DIRECTORY}/config/sonarr:/config
     ports:
-      - 8989:8989
+      - 127.0.0.1:8989:8989
     restart: unless-stopped
     networks:
       yams_network:
@@ -91,7 +88,7 @@ services:
       - ${MEDIA_DIRECTORY}:/data
       - ${INSTALL_DIRECTORY}/config/radarr:/config
     ports:
-      - 7878:7878
+      - 127.0.0.1:7878:7878
     restart: unless-stopped
     networks:
       yams_network:
@@ -116,7 +113,7 @@ services:
       - ${MEDIA_DIRECTORY}:/data
       - ${INSTALL_DIRECTORY}/config/lidarr:/config
     ports:
-      - 8686:8686
+      - 127.0.0.1:8686:8686
     restart: unless-stopped
     networks:
       yams_network:
@@ -141,7 +138,7 @@ services:
       - ${MEDIA_DIRECTORY}:/data
       - ${INSTALL_DIRECTORY}/config/bazarr:/config
     ports:
-      - 6767:6767
+      - 127.0.0.1:6767:6767
     restart: unless-stopped
     networks:
       yams_network:
@@ -165,7 +162,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${INSTALL_DIRECTORY}/config/prowlarr:/config
     ports:
-      - 9696:9696
+      - 127.0.0.1:9696:9696
     restart: unless-stopped
     networks:
       yams_network:
@@ -186,18 +183,17 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - 8888:8888/tcp # HTTP proxy
-      - 8388:8388/tcp # Shadowsocks
-      - 8388:8388/udp # Shadowsocks
-      - 8003:8000/tcp # Admin
+      - 127.0.0.1:8888:8888/tcp # HTTP proxy
+      - 127.0.0.1:8388:8388/tcp # Shadowsocks
+      - 127.0.0.1:8388:8388/udp # Shadowsocks
+      - 127.0.0.1:8003:8000/tcp # Admin
+      - 127.0.0.1:8085:8085/tcp # qbittorrent web UI
       #- 8080:8080/tcp # gluetun
       #- 8081:8081/tcp # gluetun
     environment:
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE}
-      - VPN_TYPE=openvpn
-      - OPENVPN_USER=${VPN_USER}
-      - OPENVPN_PASSWORD=${VPN_PASSWORD}
-      - OPENVPN_CIPHERS=AES-256-GCM
+      - VPN_TYPE=${VPN_TYPE}
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       - PORT_FORWARD_ONLY=on
       - VPN_PORT_FORWARDING=on
       - FIREWALL_OUTBOUND_SUBNETS=172.60.0.0/24
@@ -205,6 +201,7 @@ services:
     networks:
       yams_network:
         ipv4_address: 172.60.0.18
+      caddy_network:
 
   # FlareSolverr helps some indexers bypass anti-bot protections
   flaresolverr:

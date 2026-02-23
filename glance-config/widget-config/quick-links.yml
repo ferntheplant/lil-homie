@@ -1,46 +1,50 @@
 - type: bookmarks
   title: Quick Links
   groups:
-    - links:
+    - title: tailnet-only
+      links:
       - title: karakeep
-        url: https://keep.fjorn.dev
+        url: https://lil-homie.tail8cc0d3.ts.net:3003
         icon: sh:karakeep
-      - title: syncthing
-        url: https://lil-homie.fjorn.dev/syncthing
-        icon: sh:syncthing
-      - title: backrest
-        url: https://lil-homie.fjorn.dev/backrest
-        icon: sh:backrest
       - title: uptime
-        url: https://status.fjorn.dev
+        url: https://lil-homie.tail8cc0d3.ts.net:3001
         icon: sh:uptime-kuma
+
+    - title: management
+      links:
+      - title: backrest
+        url: https://lil-homie.tail8cc0d3.ts.net/backrest
+        icon: sh:backrest
       - title: logs
-        url: https://lil-homie.fjorn.dev/logs
+        url: https://lil-homie.tail8cc0d3.ts.net/logs
         icon: sh:dozzle
       - title: metrics
-        url: https://lil-homie.fjorn.dev/beszel
+        url: https://lil-homie.tail8cc0d3.ts.net/beszel
         icon: sh:beszel
+      - title: portainer
+        url: https://lil-homie.tail8cc0d3.ts.net/portainer
+        icon: sh:portainer
+
+    - title: media
+      links:
       - title: jellyfin
-        url: https://lil-homie.fjorn.dev/jellyfin
+        url: https://lil-homie.tail8cc0d3.ts.net/jellyfin
         icon: sh:jellyfin
       - title: sonarr
-        url: https://lil-homie.fjorn.dev/sonarr
+        url: https://lil-homie.tail8cc0d3.ts.net/sonarr
         icon: sh:sonarr
       - title: radarr
-        url: https://lil-homie.fjorn.dev/radarr
+        url: https://lil-homie.tail8cc0d3.ts.net/radarr
         icon: sh:radarr
       - title: lidarr
-        url: https://lil-homie.fjorn.dev/lidarr
+        url: https://lil-homie.tail8cc0d3.ts.net/lidarr
         icon: sh:lidarr
       - title: bazarr
-        url: https://lil-homie.fjorn.dev/bazarr
+        url: https://lil-homie.tail8cc0d3.ts.net/bazarr
         icon: sh:bazarr
       - title: prowlarr
-        url: https://lil-homie.fjorn.dev/prowlarr
+        url: https://lil-homie.tail8cc0d3.ts.net/prowlarr
         icon: sh:prowlarr
       - title: qbittorrent
-        url: https://lil-homie.fjorn.dev/qbittorrent
+        url: https://lil-homie.tail8cc0d3.ts.net/qbittorrent
         icon: sh:qbittorrent
-      - title: portainer
-        url: https://lil-homie.fjorn.dev/portainer
-        icon: sh:portainer

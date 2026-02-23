@@ -10,7 +10,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 8082:8080
+      - 127.0.0.1:8082:8080
     networks:
       - caddy_network
 
@@ -21,9 +21,9 @@ services:
     labels:
       - com.centurylinklabs.watchtower.enable=true
     environment:
-      - APP_URL=https://lil-homie.fjorn.dev/beszel
+      - APP_URL=https://lil-homie.tail8cc0d3.ts.net/beszel
     ports:
-      - 8090:8090
+      - 127.0.0.1:8090:8090
     volumes:
       - ${DATA_PATH}/beszel_data:/beszel_data
       - ${DATA_PATH}/beszel_socket:/beszel_socket
@@ -43,7 +43,7 @@ services:
       - ../../glance-config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 8088:8080
+      - 127.0.0.1:8088:8080
     networks:
       - caddy_network
 
@@ -54,8 +54,8 @@ services:
     labels:
       - com.centurylinklabs.watchtower.enable=true
     ports:
-      - 8081:80
-      - 8443:443
+      - 127.0.0.1:8081:80
+      - 127.0.0.1:8443:443
     env_file:
       - ../../.env.shared
       - ./.env
@@ -97,7 +97,7 @@ services:
     ports:
       - 22000:22000/tcp
       - 22000:22000/udp
-      - 8384:8384
+      - 127.0.0.1:8384:8384
 
   backrest:
     image: garethgeorge/backrest:latest
@@ -117,7 +117,7 @@ services:
       - TMPDIR=/tmp
       - TZ=America/New_York
     ports:
-      - "9898:9898"
+      - "127.0.0.1:9898:9898"
     restart: unless-stopped
     networks:
       - caddy_network
@@ -128,7 +128,7 @@ services:
     labels:
       - com.centurylinklabs.watchtower.enable=true
     ports:
-      - '8675:8675'
+      - '127.0.0.1:8675:8675'
     restart: unless-stopped
     env_file:
       - ../../.env.shared
@@ -146,7 +146,7 @@ services:
       - ${DATA_PATH}/uptime-kuma:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 3001:3001
+      - 127.0.0.1:3001:3001
     networks:
       - caddy_network
 
